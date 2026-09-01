@@ -1,0 +1,54 @@
+# Maven
+target/
+
+# Java
+*.class
+hs_err_pid*
+replay_pid*
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Eclipse
+.apt_generated/
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+
+# NetBeans
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# Visual Studio Code
+.vscode/
+
+# Operating systems
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local SDMX tools and client files
+local/
+
+# Generated application distributions
+distribution/output/
+distribution/runtime/
+distribution/staging/
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+temp/
+tmp/
