@@ -1,46 +1,55 @@
 package io.github.ordonovus.sdmxconverter;
 
 import javafx.application.Application;
-import javafx.geometry.Insets;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+
+import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Entry point for the SDMX Desktop Converter application.
  */
 public final class SdmxDesktopApplication extends Application {
 
-    private static final double INITIAL_WIDTH = 960;
-    private static final double INITIAL_HEIGHT = 640;
+    private static final double INITIAL_WIDTH = 1_180;
+    private static final double INITIAL_HEIGHT = 760;
+    private static final double MINIMUM_WIDTH = 940;
+    private static final double MINIMUM_HEIGHT = 620;
 
     /**
-     * Initializes and displays the primary application window.
+     * Loads and displays the primary application window.
      *
      * @param stage primary JavaFX stage
+     * @throws IOException when the main FXML resource cannot be loaded
      */
     @Override
-    public void start(Stage stage) {
-        var titleLabel = new Label("SDMX Desktop Converter");
-        titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
-
-        var statusLabel = new Label(
-                "JavaFX configurado correctamente."
+    public void start(Stage stage) throws IOException {
+        var loader = new FXMLLoader(
+                SdmxDesktopApplication.class.getResource(
+                        "/view/main-view.fxml"
+                )
         );
 
-        var root = new VBox(16, titleLabel, statusLabel);
-        root.setPadding(new Insets(32));
-
         var scene = new Scene(
-                root,
+                loader.load(),
                 INITIAL_WIDTH,
                 INITIAL_HEIGHT
         );
 
-        stage.setTitle("SDMX Desktop Converter");
-        stage.setMinWidth(800);
-        stage.setMinHeight(500);
+        String stylesheet = Objects.requireNonNull(
+                SdmxDesktopApplication.class.getResource(
+                        "/css/application.css"
+                ),
+                "Application stylesheet was not found"
+        ).toExternalForm();
+
+        scene.getStylesheets().add(stylesheet);
+
+        stage.setTitle("Convertidor de Excel a SDMX");
+        stage.setMinWidth(MINIMUM_WIDTH);
+        stage.setMinHeight(MINIMUM_HEIGHT);
         stage.setScene(scene);
         stage.show();
     }
