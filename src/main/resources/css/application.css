@@ -149,3 +149,146 @@
 .status-text {
     -fx-text-fill: #43576b;
 }
+
+.table-placeholder {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 14px;
+    -fx-font-style: italic;
+}
+
+
+/* Activity log */
+
+.activity-log-panel {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #dbe3ed transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.activity-log-title {
+    -fx-text-fill: #172033;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.activity-log-list {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #dbe3ed;
+    -fx-border-width: 1px;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-padding: 4px;
+}
+
+.activity-log-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 3px 6px;
+}
+
+.activity-log-list .list-cell:filled:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-background-radius: 4px;
+}
+
+.activity-log-row {
+    -fx-padding: 3px 2px;
+}
+
+.activity-time {
+    -fx-text-fill: #64748b;
+    -fx-font-family: "Consolas";
+    -fx-font-size: 12px;
+}
+
+.activity-level {
+    -fx-alignment: center;
+    -fx-padding: 3px 8px;
+    -fx-background-radius: 10px;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.activity-message {
+    -fx-text-fill: #334155;
+    -fx-font-size: 12px;
+}
+
+/* Activity levels */
+
+.activity-information {
+    -fx-text-fill: #1d4ed8;
+    -fx-background-color: #dbeafe;
+}
+
+.activity-processing {
+    -fx-text-fill: #0369a1;
+    -fx-background-color: #e0f2fe;
+}
+
+.activity-success {
+    -fx-text-fill: #15803d;
+    -fx-background-color: #dcfce7;
+}
+
+.activity-warning {
+    -fx-text-fill: #a16207;
+    -fx-background-color: #fef3c7;
+}
+
+.activity-error {
+    -fx-text-fill: #b42318;
+    -fx-background-color: #fee4e2;
+}
+
+/* General status */
+
+.status-text.status-information {
+    -fx-text-fill: #1d4ed8;
+}
+
+.status-text.status-processing {
+    -fx-text-fill: #0369a1;
+    -fx-font-weight: bold;
+}
+
+.status-text.status-success {
+    -fx-text-fill: #15803d;
+    -fx-font-weight: bold;
+}
+
+.status-text.status-warning {
+    -fx-text-fill: #a16207;
+    -fx-font-weight: bold;
+}
+
+.status-text.status-error {
+    -fx-text-fill: #b42318;
+    -fx-font-weight: bold;
+}
+
+/* Activity toggle */
+
+.activity-toggle-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #2563eb;
+    -fx-font-weight: bold;
+    -fx-padding: 4px 8px;
+    -fx-cursor: hand;
+}
+
+.activity-toggle-button:hover {
+    -fx-background-color: #dbeafe;
+    -fx-background-radius: 5px;
+}
+
+/* Main scrollable content */
+
+.content-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.content-scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}

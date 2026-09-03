@@ -2,6 +2,7 @@ package io.github.ordonovus.sdmxconverter.presentation.model;
 
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
 import java.nio.file.Path;
@@ -17,6 +18,7 @@ public final class ConversionFileRow {
     private final Path path;
     private final ReadOnlyStringWrapper fileName;
     private final ReadOnlyStringWrapper filePath;
+    private final StringProperty outputFileName;
     private final StringProperty status;
 
     /**
@@ -29,11 +31,14 @@ public final class ConversionFileRow {
                 .toAbsolutePath()
                 .normalize();
 
-        this.fileName = new ReadOnlyStringWrapper(
-                this.path.getFileName().toString()
-        );
+        String inputFileName = this.path.getFileName().toString();
+
+        this.fileName = new ReadOnlyStringWrapper(inputFileName);
         this.filePath = new ReadOnlyStringWrapper(this.path.toString());
-        this.status = new ReadOnlyStringWrapper(DEFAULT_STATUS);
+        this.outputFileName = new SimpleStringProperty(
+                createDefaultOutputFileName(inputFileName)
+        );
+        this.status = new SimpleStringProperty(DEFAULT_STATUS);
     }
 
     /**
@@ -64,6 +69,35 @@ public final class ConversionFileRow {
     }
 
     /**
+     * Provides the editable XML output file name property.
+     *
+     * @return observable output file name property
+     */
+    public StringProperty outputFileNameProperty() {
+        return outputFileName;
+    }
+
+    /**
+     * Returns the configured XML output file name.
+     *
+     * @return output file name
+     */
+    public String getOutputFileName() {
+        return outputFileName.get();
+    }
+
+    /**
+     * Updates the XML output file name.
+     *
+     * @param value new XML output file name
+     */
+    public void setOutputFileName(String value) {
+        outputFileName.set(
+                Objects.requireNonNull(value, "value")
+        );
+    }
+
+    /**
      * Provides the current conversion status property.
      *
      * @return observable status property
@@ -79,6 +113,18 @@ public final class ConversionFileRow {
      */
     public void setStatus(String value) {
         status.set(Objects.requireNonNull(value, "value"));
+    }
+
+    private static String createDefaultOutputFileName(
+            String inputFileName
+    ) {
+        int extensionIndex = inputFileName.lastIndexOf('.');
+
+        String baseName = extensionIndex > 0
+                ? inputFileName.substring(0, extensionIndex)
+                : inputFileName;
+
+        return baseName + ".xml";
     }
 
 }

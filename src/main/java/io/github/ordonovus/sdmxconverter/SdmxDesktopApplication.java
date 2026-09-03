@@ -47,7 +47,7 @@ public final class SdmxDesktopApplication extends Application {
 
         scene.getStylesheets().add(stylesheet);
 
-        stage.setTitle("Convertidor de Excel a SDMX");
+        stage.setTitle("Convertidor SDMX");
         stage.setMinWidth(MINIMUM_WIDTH);
         stage.setMinHeight(MINIMUM_HEIGHT);
         stage.setScene(scene);
