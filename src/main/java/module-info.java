@@ -1,6 +1,7 @@
 module io.github.ordonovus.sdmxconverter {
     requires javafx.controls;
     requires javafx.fxml;
+    requires java.xml;
 
     exports io.github.ordonovus.sdmxconverter;
 
