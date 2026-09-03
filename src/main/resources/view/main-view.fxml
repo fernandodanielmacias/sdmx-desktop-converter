@@ -19,12 +19,12 @@
             styleClass="application-root">
 
     <top>
-        <VBox spacing="6"
+        <VBox spacing="4"
               styleClass="header">
             <padding>
-                <Insets top="18"
+                <Insets top="12"
                         right="32"
-                        bottom="18"
+                        bottom="12"
                         left="32"/>
             </padding>
 
@@ -81,7 +81,7 @@
                     </HBox>
 
                     <TableView fx:id="filesTable"
-                               prefHeight="355"
+                               prefHeight="330"
                                minHeight="220">
 
                         <placeholder>
@@ -131,9 +131,89 @@
                     </HBox>
                 </VBox>
 
+                <VBox spacing="14"
+                      styleClass="card">
+                    <VBox spacing="4">
+                        <Label text="Configuración SDMX"
+                               styleClass="section-title"/>
+
+                        <Label text="Selecciona la estructura DSD y el archivo de encabezado."
+                               styleClass="secondary-text"/>
+                    </VBox>
+
+                    <HBox alignment="CENTER_LEFT"
+                          spacing="12">
+                        <Label text="Archivo DSD"
+                               minWidth="145"
+                               styleClass="configuration-key"/>
+
+                        <TextField fx:id="dsdFileField"
+                                   promptText="Selecciona el archivo XML de la estructura DSD"
+                                   editable="false"
+                                   HBox.hgrow="ALWAYS"/>
+
+                        <Button text="Seleccionar DSD"
+                                onAction="#onChooseDsdFile"
+                                styleClass="secondary-button"/>
+                    </HBox>
+
+                    <HBox alignment="CENTER_LEFT"
+                          spacing="24"
+                          styleClass="configuration-metadata">
+                        <Region minWidth="145"/>
+
+                        <HBox alignment="CENTER_LEFT"
+                              spacing="6">
+                            <Label text="Agencia:"
+                                   styleClass="configuration-key"/>
+
+                            <Label fx:id="dsdAgencyValueLabel"
+                                   text="Sin configurar"
+                                   styleClass="configuration-value"/>
+                        </HBox>
+
+                        <HBox alignment="CENTER_LEFT"
+                              spacing="6">
+                            <Label text="ID:"
+                                   styleClass="configuration-key"/>
+
+                            <Label fx:id="dsdIdValueLabel"
+                                   text="Sin configurar"
+                                   styleClass="configuration-value"/>
+                        </HBox>
+
+                        <HBox alignment="CENTER_LEFT"
+                              spacing="6">
+                            <Label text="Versión:"
+                                   styleClass="configuration-key"/>
+
+                            <Label fx:id="dsdVersionValueLabel"
+                                   text="Sin configurar"
+                                   styleClass="configuration-value"/>
+                        </HBox>
+                    </HBox>
+
+                    <HBox alignment="CENTER_LEFT"
+                          spacing="12">
+                        <Label text="Archivo de encabezado"
+                               minWidth="145"
+                               styleClass="configuration-key"/>
+
+                        <TextField fx:id="headerFileField"
+                                   promptText="Selecciona el archivo header.prop"
+                                   editable="false"
+                                   HBox.hgrow="ALWAYS"/>
+
+                        <Button text="Seleccionar encabezado"
+                                onAction="#onChooseHeaderFile"
+                                styleClass="secondary-button"/>
+                    </HBox>
+                </VBox>
+
                 <HBox alignment="CENTER_LEFT"
                       spacing="12">
-                    <Label text="Convertidor 11.8.1 · DSD sin configurar"
+                    <Label fx:id="configurationSummaryLabel"
+                           text="Convertidor 11.8.1 · DSD sin configurar"
                            styleClass="secondary-text"/>
 
                     <Region HBox.hgrow="ALWAYS"/>

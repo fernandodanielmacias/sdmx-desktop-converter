@@ -1,51 +1,59 @@
 package io.github.ordonovus.sdmxconverter.presentation.controller;
 
-import io.github.ordonovus.sdmxconverter.presentation.cell.ActivityLogListCell;
+import io.github.ordonovus.sdmxconverter.application.service.OutputFileNameService;
+import io.github.ordonovus.sdmxconverter.domain.model.DsdMetadata;
+import io.github.ordonovus.sdmxconverter.infrastructure.sdmx.DsdMetadataReader;
+import io.github.ordonovus.sdmxconverter.presentation.dialog.FileDialogService;
+import io.github.ordonovus.sdmxconverter.presentation.log.ActivityLogManager;
 import io.github.ordonovus.sdmxconverter.presentation.model.ActivityLogEntry;
 import io.github.ordonovus.sdmxconverter.presentation.model.ActivityLogLevel;
 import io.github.ordonovus.sdmxconverter.presentation.model.ConversionFileRow;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.scene.input.Clipboard;
-import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.VBox;
-import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
 import javafx.stage.Window;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
- * Controls the main conversion screen and its file-selection actions.
+ * Coordinates the main conversion screen and delegates specialized behavior
+ * to application and presentation services.
  */
 public final class MainController {
 
-    private static final Pattern INVALID_WINDOWS_FILE_CHARACTERS =
-            Pattern.compile("[<>:\"/\\\\|?*\\p{Cntrl}]");
+    private static final String CONVERTER_VERSION = "11.8.1";
 
-    private static final Pattern RESERVED_WINDOWS_FILE_NAME =
-            Pattern.compile(
-                    "^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$",
-                    Pattern.CASE_INSENSITIVE
-            );
+    private final FileDialogService fileDialogService =
+            new FileDialogService();
 
-    private static final List<String> STATUS_STYLE_CLASSES = List.of(
-            "status-information",
-            "status-processing",
-            "status-success",
-            "status-warning",
-            "status-error"
-    );
+    private final OutputFileNameService outputFileNameService =
+            new OutputFileNameService();
+
+    private final DsdMetadataReader dsdMetadataReader =
+            new DsdMetadataReader();
+
+    private ActivityLogManager activityLogManager;
+
+    private Path selectedDsdFile;
+    private DsdMetadata selectedDsdMetadata;
+    private Path selectedHeaderFile;
 
     @FXML
     private TableView<ConversionFileRow> filesTable;
@@ -64,6 +72,24 @@ public final class MainController {
 
     @FXML
     private TextField outputDirectoryField;
+
+    @FXML
+    private TextField dsdFileField;
+
+    @FXML
+    private TextField headerFileField;
+
+    @FXML
+    private Label dsdAgencyValueLabel;
+
+    @FXML
+    private Label dsdIdValueLabel;
+
+    @FXML
+    private Label dsdVersionValueLabel;
+
+    @FXML
+    private Label configurationSummaryLabel;
 
     @FXML
     private Label selectionCountLabel;
@@ -87,10 +113,237 @@ public final class MainController {
     private Button toggleActivityLogButton;
 
     /**
-     * Configures table columns, selection behavior and control bindings.
+     * Configures the screen after all FXML elements have been injected.
      */
     @FXML
     private void initialize() {
+        configureTable();
+
+        activityLogManager = new ActivityLogManager(
+                activityLogList,
+                activityLogPanel,
+                generalStatusLabel,
+                toggleActivityLogButton,
+                contentScrollPane
+        );
+
+        convertButton.disableProperty().bind(
+                Bindings.isEmpty(filesTable.getItems())
+                        .or(outputDirectoryField.textProperty().isEmpty())
+                        .or(dsdFileField.textProperty().isEmpty())
+                        .or(headerFileField.textProperty().isEmpty())
+        );
+
+        updateSelectionCount();
+        updateConfigurationSummary();
+
+        activityLogManager.add(
+                ActivityLogLevel.INFORMATION,
+                "Aplicación lista para seleccionar archivos."
+        );
+    }
+
+    /**
+     * Opens a multiple-selection dialog for Excel input files.
+     */
+    @FXML
+    private void onChooseFiles() {
+        List<Path> selectedFiles =
+                fileDialogService.chooseExcelFiles(
+                        getWindow(),
+                        getPreferredInitialLocation(null)
+                );
+
+        if (selectedFiles.isEmpty()) {
+            return;
+        }
+
+        Set<Path> existingPaths = new HashSet<>();
+
+        for (ConversionFileRow row : filesTable.getItems()) {
+            existingPaths.add(row.getPath());
+        }
+
+        List<String> existingOutputFileNames =
+                getOutputFileNames(null);
+
+        int addedFiles = 0;
+
+        for (Path selectedPath : selectedFiles) {
+            if (existingPaths.add(selectedPath)) {
+                ConversionFileRow row =
+                        new ConversionFileRow(selectedPath);
+
+                String uniqueOutputFileName =
+                        outputFileNameService.createUnique(
+                                row.getOutputFileName(),
+                                existingOutputFileNames
+                        );
+
+                row.setOutputFileName(uniqueOutputFileName);
+                filesTable.getItems().add(row);
+                existingOutputFileNames.add(uniqueOutputFileName);
+
+                addedFiles++;
+            }
+        }
+
+        assignDefaultOutputDirectory(selectedFiles);
+        updateSelectionCount();
+
+        if (addedFiles == 0) {
+            activityLogManager.add(
+                    ActivityLogLevel.WARNING,
+                    "Los archivos seleccionados ya estaban en la lista."
+            );
+            return;
+        }
+
+        String message = addedFiles == 1
+                ? "Se agregó 1 archivo."
+                : "Se agregaron " + addedFiles + " archivos.";
+
+        activityLogManager.add(
+                ActivityLogLevel.INFORMATION,
+                message
+        );
+    }
+
+    /**
+     * Opens a directory chooser for selecting the XML output folder.
+     */
+    @FXML
+    private void onChooseOutputDirectory() {
+        fileDialogService.chooseOutputDirectory(
+                getWindow(),
+                getPreferredInitialLocation(null)
+        ).ifPresent(selectedDirectory -> {
+            outputDirectoryField.setText(
+                    selectedDirectory.toString()
+            );
+
+            activityLogManager.add(
+                    ActivityLogLevel.INFORMATION,
+                    "Carpeta de salida seleccionada."
+            );
+        });
+    }
+
+    /**
+     * Opens a file chooser and loads the selected SDMX DSD file.
+     */
+    @FXML
+    private void onChooseDsdFile() {
+        fileDialogService.chooseDsdFile(
+                getWindow(),
+                getPreferredInitialLocation(selectedDsdFile)
+        ).ifPresent(this::loadDsdFile);
+    }
+
+    /**
+     * Opens a file chooser for selecting the SDMX header properties file.
+     */
+    @FXML
+    private void onChooseHeaderFile() {
+        fileDialogService.chooseHeaderFile(
+                getWindow(),
+                getPreferredInitialLocation(selectedHeaderFile)
+        ).ifPresent(this::loadHeaderFile);
+    }
+
+    /**
+     * Removes every currently selected row from the conversion queue.
+     */
+    @FXML
+    private void onRemoveSelectedFiles() {
+        List<ConversionFileRow> selectedRows = List.copyOf(
+                filesTable.getSelectionModel().getSelectedItems()
+        );
+
+        if (selectedRows.isEmpty()) {
+            activityLogManager.add(
+                    ActivityLogLevel.WARNING,
+                    "No hay archivos seleccionados para eliminar."
+            );
+            return;
+        }
+
+        filesTable.getItems().removeAll(selectedRows);
+        updateSelectionCount();
+
+        activityLogManager.add(
+                ActivityLogLevel.INFORMATION,
+                "Se eliminaron " + selectedRows.size()
+                        + " archivos de la lista."
+        );
+    }
+
+    /**
+     * Removes all input files from the conversion queue.
+     */
+    @FXML
+    private void onClearFiles() {
+        filesTable.getItems().clear();
+        updateSelectionCount();
+
+        activityLogManager.add(
+                ActivityLogLevel.INFORMATION,
+                "La lista de archivos está vacía."
+        );
+    }
+
+    /**
+     * Restores the conversion form while preserving the SDMX configuration.
+     */
+    @FXML
+    private void onResetForm() {
+        filesTable.getItems().clear();
+        outputDirectoryField.clear();
+        updateSelectionCount();
+
+        activityLogManager.reset(
+                ActivityLogLevel.INFORMATION,
+                "El formulario se restableció correctamente."
+        );
+    }
+
+    /**
+     * Shows or hides the activity log panel.
+     */
+    @FXML
+    private void onToggleActivityLog() {
+        activityLogManager.toggleVisibility();
+    }
+
+    /**
+     * Removes every entry from the visual activity log.
+     */
+    @FXML
+    private void onClearActivityLog() {
+        activityLogManager.clear();
+    }
+
+    /**
+     * Copies the complete visual activity log to the system clipboard.
+     */
+    @FXML
+    private void onCopyActivityLog() {
+        activityLogManager.copyToClipboard();
+    }
+
+    /**
+     * Handles the conversion action until the Converter integration is added.
+     */
+    @FXML
+    private void onConvert() {
+        activityLogManager.add(
+                ActivityLogLevel.WARNING,
+                "La integración con el Convertidor SDMX todavía "
+                        + "no está disponible."
+        );
+    }
+
+    private void configureTable() {
         fileNameColumn.setCellValueFactory(
                 cell -> cell.getValue().fileNameProperty()
         );
@@ -104,8 +357,12 @@ public final class MainController {
                 cell -> cell.getValue().statusProperty()
         );
 
-        configureEditableOutputFileNameColumn();
-        configureActivityLog();
+        outputFileNameColumn.setCellFactory(
+                TextFieldTableCell.forTableColumn()
+        );
+        outputFileNameColumn.setOnEditCommit(
+                this::handleOutputFileNameEdit
+        );
 
         filesTable.setEditable(true);
         filesTable.setColumnResizePolicy(
@@ -114,408 +371,168 @@ public final class MainController {
         filesTable.getSelectionModel().setSelectionMode(
                 SelectionMode.MULTIPLE
         );
-
-        convertButton.disableProperty().bind(
-                Bindings.isEmpty(filesTable.getItems())
-                        .or(outputDirectoryField.textProperty().isEmpty())
-        );
-
-        updateSelectionCount();
-        addActivity(ActivityLogLevel.INFORMATION, "Aplicación lista para seleccionar archivos.");
     }
 
-    /**
-     * Opens a multiple-selection dialog for Excel input files.
-     */
-    @FXML
-    private void onChooseFiles() {
-        var chooser = new FileChooser();
-        chooser.setTitle("Seleccionar archivos Excel");
-        chooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter(
-                        "Archivos Excel (*.xls, *.xlsx)",
-                        "*.xls",
-                        "*.xlsx"
-                )
-        );
-
-        List<File> selectedFiles =
-                chooser.showOpenMultipleDialog(getWindow());
-
-        if (selectedFiles == null || selectedFiles.isEmpty()) {
-            return;
-        }
-
-        Set<Path> existingPaths = new HashSet<>();
-
-        for (ConversionFileRow row : filesTable.getItems()) {
-            existingPaths.add(row.getPath());
-        }
-
-        int addedFiles = 0;
-
-        for (File file : selectedFiles) {
-            Path selectedPath = file.toPath()
-                    .toAbsolutePath()
-                    .normalize();
-
-            if (existingPaths.add(selectedPath)) {
-                ConversionFileRow row =
-                        new ConversionFileRow(selectedPath);
-
-                row.setOutputFileName(
-                        createUniqueOutputFileName(
-                                row.getOutputFileName()
-                        )
-                );
-
-                filesTable.getItems().add(row);
-                addedFiles++;
-            }
-        }
-
-        if (outputDirectoryField.getText().isBlank()) {
-            Path firstFile = selectedFiles.getFirst()
-                    .toPath()
-                    .toAbsolutePath()
-                    .normalize();
-
-            Path parent = firstFile.getParent();
-
-            if (parent != null) {
-                outputDirectoryField.setText(parent.toString());
-            }
-        }
-
-        updateSelectionCount();
-
-        if (addedFiles == 0) {
-            addActivity(ActivityLogLevel.WARNING, "Los archivos seleccionados ya estaban en la lista.");
-        } else {
-            String message = addedFiles == 1
-                    ? "Se agregó 1 archivo."
-                    : "Se agregaron " + addedFiles + " archivos.";
-
-            addActivity(ActivityLogLevel.INFORMATION, message);
-        }
-    }
-
-    /**
-     * Opens a directory chooser for selecting the XML output folder.
-     */
-    @FXML
-    private void onChooseOutputDirectory() {
-        var chooser = new DirectoryChooser();
-        chooser.setTitle("Seleccionar carpeta de salida");
-
-        File currentDirectory = getCurrentOutputDirectory();
-
-        if (currentDirectory != null) {
-            chooser.setInitialDirectory(currentDirectory);
-        }
-
-        File selectedDirectory = chooser.showDialog(getWindow());
-
-        if (selectedDirectory != null) {
-            outputDirectoryField.setText(selectedDirectory.getAbsolutePath());
-            generalStatusLabel.setText("Carpeta de salida seleccionada.");
-        }
-    }
-
-    /**
-     * Removes every currently selected row from the conversion queue.
-     */
-    @FXML
-    private void onRemoveSelectedFiles() {
-        List<ConversionFileRow> selectedRows = List.copyOf(
-                filesTable.getSelectionModel().getSelectedItems()
-        );
-
-        filesTable.getItems().removeAll(selectedRows);
-        updateSelectionCount();
-
-        if (selectedRows.isEmpty()) {
-            addActivity(ActivityLogLevel.WARNING, "No hay archivos seleccionados para eliminar.");
-        } else {
-            addActivity(ActivityLogLevel.INFORMATION, "Se eliminaron " + selectedRows.size() + " archivos de la lista.");
-        }
-    }
-
-    /**
-     * Removes all input files from the conversion queue.
-     */
-    @FXML
-    private void onClearFiles() {
-        filesTable.getItems().clear();
-        updateSelectionCount();
-
-        addActivity(ActivityLogLevel.INFORMATION, "La lista de archivos está vacía.");
-    }
-
-    /**
-     * Restores the conversion form to its initial state.
-     */
-    @FXML
-    private void onResetForm() {
-        filesTable.getItems().clear();
-        outputDirectoryField.clear();
-        activityLogList.getItems().clear();
-
-        updateSelectionCount();
-
-        addActivity(ActivityLogLevel.INFORMATION, "El formulario se restableció correctamente.");
-    }
-
-    /**
-     * Shows or hides the activity log panel.
-     */
-    @FXML
-    private void onToggleActivityLog() {
-        boolean showPanel = !activityLogPanel.isVisible();
-
-        activityLogPanel.setVisible(showPanel);
-
-        toggleActivityLogButton.setText(showPanel ? "Ocultar actividad" : "Mostrar actividad");
-
-        if (showPanel) {
-            Platform.runLater(() -> {
-                contentScrollPane.setVvalue(1.0);
-
-                if (!activityLogList.getItems().isEmpty()) {
-                    activityLogList.scrollTo(activityLogList.getItems().size() - 1);
-                }
-            });
-        }
-    }
-
-    /**
-     * Removes every entry from the visual activity log.
-     */
-    @FXML
-    private void onClearActivityLog() {
-        activityLogList.getItems().clear();
-
-        updateGeneralStatus(ActivityLogLevel.INFORMATION, "El registro de actividad está vacío.");
-    }
-
-    /**
-     * Copies the complete visual activity log to the system clipboard.
-     */
-    @FXML
-    private void onCopyActivityLog() {
-        if (activityLogList.getItems().isEmpty()) {
-            updateGeneralStatus(ActivityLogLevel.WARNING, "No hay actividad para copiar.");
-            return;
-        }
-
-        String logText = activityLogList.getItems()
-                .stream()
-                .map(this::formatActivityLogEntry)
-                .collect(Collectors.joining(System.lineSeparator())
-                );
-
-        var clipboardContent = new ClipboardContent();
-        clipboardContent.putString(logText);
-
-        Clipboard.getSystemClipboard().setContent(clipboardContent);
-
-        updateGeneralStatus(ActivityLogLevel.SUCCESS, "El registro de actividad se copió al portapapeles.");
-    }
-
-    /**
-     * Handles the conversion action until the Converter integration is added.
-     */
-    @FXML
-    private void onConvert() {
-        addActivity(ActivityLogLevel.WARNING, "La integración con el Convertidor SDMX todavía no está disponible." );
-    }
-
-    private void configureEditableOutputFileNameColumn() {
-        outputFileNameColumn.setCellFactory(
-                TextFieldTableCell.forTableColumn()
-        );
-
-        outputFileNameColumn.setOnEditCommit(event -> {
-            ConversionFileRow row = event.getRowValue();
-
-            try {
-                String normalizedFileName =
-                        normalizeOutputFileName(event.getNewValue());
-
-                validateUniqueOutputFileName(row, normalizedFileName);
-
-                row.setOutputFileName(normalizedFileName);
-                row.setStatus("Pendiente");
-
-                addActivity(ActivityLogLevel.INFORMATION, "Nombre del archivo de salida actualizado.");
-            } catch (IllegalArgumentException exception) {
-                addActivity(ActivityLogLevel.ERROR, exception.getMessage());
-            } finally {
-                Platform.runLater(filesTable::refresh);
-            }
-        });
-    }
-
-    private void configureActivityLog() {
-        activityLogList.setCellFactory(ignored -> new ActivityLogListCell());
-
-        activityLogPanel.managedProperty().bind(activityLogPanel.visibleProperty());
-        activityLogPanel.setVisible(false);
-    }
-
-    private void addActivity(
-            ActivityLogLevel level,
-            String message
+    private void handleOutputFileNameEdit(
+            TableColumn.CellEditEvent<ConversionFileRow, String> event
     ) {
-        ActivityLogEntry entry = ActivityLogEntry.now(level, message);
+        ConversionFileRow editedRow = event.getRowValue();
 
-        activityLogList.getItems().add(entry);
-        updateGeneralStatus(level, message);
+        try {
+            String normalizedFileName =
+                    outputFileNameService.normalize(
+                            event.getNewValue()
+                    );
 
-        Platform.runLater(() ->
-                activityLogList.scrollTo(activityLogList.getItems().size() - 1)
-        );
-    }
-
-    private void updateGeneralStatus(
-            ActivityLogLevel level,
-            String message
-    ) {
-        generalStatusLabel.getStyleClass().removeAll(STATUS_STYLE_CLASSES);
-        generalStatusLabel.getStyleClass().add(getStatusStyleClass(level));
-
-        String displayedMessage = switch (level) {
-            case WARNING -> "Advertencia: " + message;
-            case ERROR -> "Error: " + message;
-            default -> message;
-        };
-
-        generalStatusLabel.setText(displayedMessage);
-    }
-
-    private String getStatusStyleClass(ActivityLogLevel level) {
-        return switch (level) {
-            case INFORMATION -> "status-information";
-            case PROCESSING -> "status-processing";
-            case SUCCESS -> "status-success";
-            case WARNING -> "status-warning";
-            case ERROR -> "status-error";
-        };
-    }
-
-    private String formatActivityLogEntry(ActivityLogEntry entry) {
-        return "%s  %-11s  %s".formatted(
-                entry.formattedTime(),
-                entry.level().getDisplayName(),
-                entry.message()
-        );
-    }
-
-    private String normalizeOutputFileName(String value) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("El nombre del archivo de salida no puede estar vacío.");
-        }
-
-        String normalizedValue = value.trim();
-
-        if (INVALID_WINDOWS_FILE_CHARACTERS
-                .matcher(normalizedValue)
-                .find()) {
-            throw new IllegalArgumentException("El nombre contiene caracteres no permitidos por Windows.");
-        }
-
-        if (normalizedValue.endsWith(".")) {
-            throw new IllegalArgumentException("El nombre del archivo no puede terminar con un punto.");
-        }
-
-        if (!normalizedValue.toLowerCase(Locale.ROOT)
-                .endsWith(".xml")) {
-            normalizedValue += ".xml";
-        }
-
-        String baseName = normalizedValue.substring(
-                0,
-                normalizedValue.length() - ".xml".length()
-        );
-
-        if (baseName.isBlank()) {
-            throw new IllegalArgumentException("El archivo debe tener un nombre antes de la extensión.");
-        }
-
-        if (RESERVED_WINDOWS_FILE_NAME
-                .matcher(baseName)
-                .matches()) {
-            throw new IllegalArgumentException("El nombre está reservado por Windows.");
-        }
-
-        return normalizedValue;
-    }
-
-
-    private void validateUniqueOutputFileName(
-            ConversionFileRow editedRow,
-            String outputFileName
-    ) {
-        if (outputFileNameExists(outputFileName, editedRow)) {
-            throw new IllegalArgumentException("Ya existe otro archivo de salida con ese nombre.");
-        }
-    }
-
-    private String createUniqueOutputFileName(
-            String preferredFileName
-    ) {
-        if (!outputFileNameExists(preferredFileName, null)) {
-            return preferredFileName;
-        }
-
-        int extensionIndex = preferredFileName.lastIndexOf('.');
-
-        String baseName = extensionIndex > 0
-                ? preferredFileName.substring(0, extensionIndex)
-                : preferredFileName;
-
-        String extension = extensionIndex > 0 ? preferredFileName.substring(extensionIndex) : "";
-
-        int suffix = 2;
-        String candidate;
-
-        do {
-            candidate = "%s (%d)%s".formatted(
-                    baseName,
-                    suffix,
-                    extension
+            outputFileNameService.validateUnique(
+                    normalizedFileName,
+                    getOutputFileNames(editedRow)
             );
-            suffix++;
-        } while (outputFileNameExists(candidate, null));
 
-        return candidate;
+            editedRow.setOutputFileName(normalizedFileName);
+            editedRow.setStatus("Pendiente");
+
+            activityLogManager.add(
+                    ActivityLogLevel.INFORMATION,
+                    "Nombre del archivo de salida actualizado."
+            );
+        } catch (IllegalArgumentException exception) {
+            activityLogManager.add(
+                    ActivityLogLevel.ERROR,
+                    exception.getMessage()
+            );
+        } finally {
+            Platform.runLater(filesTable::refresh);
+        }
     }
 
-    private boolean outputFileNameExists(
-            String outputFileName,
+    private void loadDsdFile(Path dsdFile) {
+        try {
+            DsdMetadata metadata =
+                    dsdMetadataReader.read(dsdFile);
+
+            selectedDsdFile = dsdFile;
+            selectedDsdMetadata = metadata;
+
+            dsdFileField.setText(dsdFile.toString());
+            dsdAgencyValueLabel.setText(metadata.agencyId());
+            dsdIdValueLabel.setText(metadata.id());
+            dsdVersionValueLabel.setText(metadata.version());
+
+            updateConfigurationSummary();
+
+            activityLogManager.add(
+                    ActivityLogLevel.SUCCESS,
+                    "El DSD " + metadata.formattedIdentity()
+                            + " se cargó correctamente."
+            );
+        } catch (IOException ignored) {
+            activityLogManager.add(
+                    ActivityLogLevel.ERROR,
+                    "El archivo seleccionado no contiene "
+                            + "una estructura DSD válida."
+            );
+        }
+    }
+
+    private void loadHeaderFile(Path headerFile) {
+        if (!Files.isRegularFile(headerFile)
+                || !Files.isReadable(headerFile)) {
+            activityLogManager.add(
+                    ActivityLogLevel.ERROR,
+                    "No se puede leer el archivo de encabezado seleccionado."
+            );
+            return;
+        }
+
+        selectedHeaderFile = headerFile;
+        headerFileField.setText(headerFile.toString());
+
+        activityLogManager.add(
+                ActivityLogLevel.SUCCESS,
+                "El archivo de encabezado se cargó correctamente."
+        );
+    }
+
+    private void assignDefaultOutputDirectory(
+            List<Path> selectedFiles
+    ) {
+        if (!outputDirectoryField.getText().isBlank()
+                || selectedFiles.isEmpty()) {
+            return;
+        }
+
+        Path parent = selectedFiles.getFirst().getParent();
+
+        if (parent != null) {
+            outputDirectoryField.setText(parent.toString());
+        }
+    }
+
+    private List<String> getOutputFileNames(
             ConversionFileRow ignoredRow
     ) {
-        return filesTable.getItems()
-                .stream()
-                .filter(row -> row != ignoredRow)
-                .map(ConversionFileRow::getOutputFileName)
-                .anyMatch(existingName ->
-                        existingName.equalsIgnoreCase(outputFileName)
-                );
+        List<String> outputFileNames = new ArrayList<>();
+
+        for (ConversionFileRow row : filesTable.getItems()) {
+            if (row != ignoredRow) {
+                outputFileNames.add(row.getOutputFileName());
+            }
+        }
+
+        return outputFileNames;
     }
 
-    private File getCurrentOutputDirectory() {
+    private Path getPreferredInitialLocation(
+            Path preferredLocation
+    ) {
+        if (preferredLocation != null) {
+            return preferredLocation;
+        }
+
+        Path outputDirectory = getOutputDirectory();
+
+        if (outputDirectory != null) {
+            return outputDirectory;
+        }
+
+        if (!filesTable.getItems().isEmpty()) {
+            return filesTable.getItems()
+                    .getFirst()
+                    .getPath();
+        }
+
+        return null;
+    }
+
+    private Path getOutputDirectory() {
         String value = outputDirectoryField.getText();
 
         if (value == null || value.isBlank()) {
             return null;
         }
 
-        File directory = new File(value);
+        try {
+            Path directory = Path.of(value)
+                    .toAbsolutePath()
+                    .normalize();
 
-        return directory.isDirectory()
-                ? directory
-                : null;
+            return Files.isDirectory(directory)
+                    ? directory
+                    : null;
+        } catch (InvalidPathException ignored) {
+            return null;
+        }
+    }
+
+    private void updateConfigurationSummary() {
+        String summary = selectedDsdMetadata == null
+                ? "Convertidor " + CONVERTER_VERSION
+                + " · DSD sin configurar"
+                : "Convertidor " + CONVERTER_VERSION
+                + " · " + selectedDsdMetadata.formattedIdentity();
+
+        configurationSummaryLabel.setText(summary);
     }
 
     private Window getWindow() {
@@ -531,5 +548,4 @@ public final class MainController {
                         : size + " archivos seleccionados"
         );
     }
-
 }

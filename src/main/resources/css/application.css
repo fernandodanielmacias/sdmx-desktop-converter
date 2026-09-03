@@ -292,3 +292,29 @@
 .content-scroll-pane > .viewport {
     -fx-background-color: transparent;
 }
+
+/* SDMX configuration */
+
+.configuration-key {
+    -fx-text-fill: #475569;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.configuration-value {
+    -fx-text-fill: #1d4ed8;
+    -fx-background-color: #dbeafe;
+    -fx-background-radius: 10px;
+    -fx-padding: 3px 9px;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.configuration-metadata {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #e2e8f0;
+    -fx-border-width: 1px;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-padding: 9px 12px;
+}
