@@ -1,8 +1,12 @@
 package io.github.ordonovus.sdmxconverter.presentation.controller;
 
+import io.github.ordonovus.sdmxconverter.application.converter.ConverterInstallationManager;
+import io.github.ordonovus.sdmxconverter.application.converter.ConverterInstallationProvider;
+import io.github.ordonovus.sdmxconverter.application.converter.ConverterInstallationValidator;
 import io.github.ordonovus.sdmxconverter.application.service.OutputFileNameService;
 import io.github.ordonovus.sdmxconverter.domain.model.DsdMetadata;
 import io.github.ordonovus.sdmxconverter.infrastructure.sdmx.DsdMetadataReader;
+import io.github.ordonovus.sdmxconverter.presentation.dialog.SettingsDialog;
 import io.github.ordonovus.sdmxconverter.presentation.dialog.FileDialogService;
 import io.github.ordonovus.sdmxconverter.presentation.log.ActivityLogManager;
 import io.github.ordonovus.sdmxconverter.presentation.model.ActivityLogEntry;
@@ -11,14 +15,7 @@ import io.github.ordonovus.sdmxconverter.presentation.model.ConversionFileRow;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.VBox;
 import javafx.stage.Window;
@@ -48,6 +45,15 @@ public final class MainController {
 
     private final DsdMetadataReader dsdMetadataReader =
             new DsdMetadataReader();
+
+    private final ConverterInstallationManager converterInstallationManager =
+            new ConverterInstallationManager(
+                    new ConverterInstallationProvider(),
+                    new ConverterInstallationValidator()
+            );
+
+    private final SettingsDialog settingsDialog =
+            new SettingsDialog();
 
     private ActivityLogManager activityLogManager;
 
@@ -329,6 +335,36 @@ public final class MainController {
     @FXML
     private void onCopyActivityLog() {
         activityLogManager.copyToClipboard();
+    }
+
+    /**
+     * Opens the application settings window.
+     */
+    @FXML
+    private void onOpenSettings() {
+        try {
+            settingsDialog.show(
+                    getWindow(),
+                    converterInstallationManager
+            );
+        } catch (IOException exception) {
+            generalStatusLabel.setText(
+                    "No fue posible abrir la configuración del convertidor."
+            );
+
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.initOwner(getWindow());
+            alert.setTitle("Error de configuración");
+            alert.setHeaderText(
+                    "No fue posible abrir la administración del convertidor."
+            );
+            alert.setContentText(
+                    exception.getMessage() == null
+                            ? "No se pudo cargar la ventana de configuración."
+                            : exception.getMessage()
+            );
+            alert.showAndWait();
+        }
     }
 
     /**

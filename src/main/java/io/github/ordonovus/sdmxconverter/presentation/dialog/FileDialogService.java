@@ -38,9 +38,12 @@ public final class FileDialogService {
                 )
         );
 
-        List<File> selectedFiles = chooser.showOpenMultipleDialog(owner);
+        List<File> selectedFiles =
+                chooser.showOpenMultipleDialog(owner);
 
-        if (selectedFiles == null) return List.of();
+        if (selectedFiles == null) {
+            return List.of();
+        }
 
         return selectedFiles.stream()
                 .map(File::toPath)
@@ -116,20 +119,29 @@ public final class FileDialogService {
             Window owner,
             Path initialLocation
     ) {
-        var chooser = new DirectoryChooser();
-        chooser.setTitle("Seleccionar carpeta de salida");
+        return chooseDirectory(
+                owner,
+                "Seleccionar carpeta de salida",
+                initialLocation
+        );
+    }
 
-        File initialDirectory = resolveInitialDirectory(initialLocation);
-
-        if (initialDirectory != null) {
-            chooser.setInitialDirectory(initialDirectory);
-        }
-
-        File selectedDirectory = chooser.showDialog(owner);
-
-        return selectedDirectory == null
-                ? Optional.empty()
-                : Optional.of(normalize(selectedDirectory.toPath()));
+    /**
+     * Opens a dialog for selecting a ConverterCLIApp installation directory.
+     *
+     * @param owner owner window of the dialog
+     * @param initialLocation preferred initial directory
+     * @return selected normalized directory, or empty when cancelled
+     */
+    public Optional<Path> chooseConverterDirectory(
+            Window owner,
+            Path initialLocation
+    ) {
+        return chooseDirectory(
+                owner,
+                "Seleccionar carpeta ConverterCLIApp",
+                initialLocation
+        );
     }
 
     private Optional<Path> chooseSingleFile(
@@ -151,6 +163,30 @@ public final class FileDialogService {
                 : Optional.of(normalize(selectedFile.toPath()));
     }
 
+    private Optional<Path> chooseDirectory(
+            Window owner,
+            String title,
+            Path initialLocation
+    ) {
+        var chooser = new DirectoryChooser();
+        chooser.setTitle(title);
+
+        File initialDirectory =
+                resolveInitialDirectory(initialLocation);
+
+        if (initialDirectory != null) {
+            chooser.setInitialDirectory(initialDirectory);
+        }
+
+        File selectedDirectory = chooser.showDialog(owner);
+
+        return selectedDirectory == null
+                ? Optional.empty()
+                : Optional.of(
+                normalize(selectedDirectory.toPath())
+        );
+    }
+
     private FileChooser createFileChooser(
             String title,
             Path initialLocation,
@@ -160,7 +196,8 @@ public final class FileDialogService {
         chooser.setTitle(title);
         chooser.getExtensionFilters().setAll(extensionFilters);
 
-        File initialDirectory = resolveInitialDirectory(initialLocation);
+        File initialDirectory =
+                resolveInitialDirectory(initialLocation);
 
         if (initialDirectory != null) {
             chooser.setInitialDirectory(initialDirectory);
@@ -188,5 +225,4 @@ public final class FileDialogService {
     private static Path normalize(Path path) {
         return path.toAbsolutePath().normalize();
     }
-
 }

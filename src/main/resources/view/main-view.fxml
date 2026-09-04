@@ -8,10 +8,12 @@
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.SVGPath?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
@@ -19,8 +21,10 @@
             styleClass="application-root">
 
     <top>
-        <VBox spacing="4"
+        <HBox alignment="CENTER_LEFT"
+              spacing="20"
               styleClass="header">
+
             <padding>
                 <Insets top="12"
                         right="32"
@@ -28,12 +32,29 @@
                         left="32"/>
             </padding>
 
-            <Label text="Convertidor SDMX"
-                   styleClass="application-title"/>
+            <VBox spacing="4">
+                <Label text="Convertidor SDMX"
+                       styleClass="application-title"/>
 
-            <Label text="Conversión de archivos Excel a SDMX-XML"
-                   styleClass="application-subtitle"/>
-        </VBox>
+                <Label text="Conversión de archivos Excel a SDMX-XML"
+                       styleClass="application-subtitle"/>
+            </VBox>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <Button accessibleText="Configuración"
+                    onAction="#onOpenSettings"
+                    styleClass="header-settings-button">
+                <graphic>
+                    <SVGPath content="M19.43,12.98 C19.47,12.66 19.5,12.34 19.5,12 C19.5,11.66 19.47,11.34 19.42,11.02 L21.54,9.37 L19.54,5.91 L17.05,6.91 C16.53,6.5 15.96,6.17 15.34,5.91 L14.96,3.27 L10.96,3.27 L10.58,5.91 C9.96,6.17 9.39,6.51 8.87,6.91 L6.38,5.91 L4.38,9.37 L6.5,11.02 C6.45,11.34 6.42,11.67 6.42,12 C6.42,12.33 6.45,12.66 6.5,12.98 L4.38,14.63 L6.38,18.09 L8.87,17.09 C9.39,17.5 9.96,17.83 10.58,18.09 L10.96,20.73 L14.96,20.73 L15.34,18.09 C15.96,17.83 16.53,17.49 17.05,17.09 L19.54,18.09 L21.54,14.63 Z M12.96,15.5 C11.03,15.5 9.46,13.93 9.46,12 C9.46,10.07 11.03,8.5 12.96,8.5 C14.89,8.5 16.46,10.07 16.46,12 C16.46,13.93 14.89,15.5 12.96,15.5 Z"
+                             styleClass="header-settings-icon"/>
+                </graphic>
+
+                <tooltip>
+                    <Tooltip text="Configuración"/>
+                </tooltip>
+            </Button>
+        </HBox>
     </top>
 
     <center>
@@ -69,15 +90,15 @@
 
                         <Button text="Eliminar seleccionados"
                                 onAction="#onRemoveSelectedFiles"
-                                styleClass="secondary-button"/>
+                                styleClass="danger-button"/>
 
                         <Button text="Limpiar"
                                 onAction="#onClearFiles"
-                                styleClass="secondary-button"/>
+                                styleClass="danger-button"/>
 
                         <Button text="Seleccionar Excel"
                                 onAction="#onChooseFiles"
-                                styleClass="primary-button"/>
+                                styleClass="secondary-button"/>
                     </HBox>
 
                     <TableView fx:id="filesTable"
@@ -211,7 +232,7 @@
                 </VBox>
 
                 <HBox alignment="CENTER_LEFT"
-                      spacing="12">
+                      spacing="16">
                     <Label fx:id="configurationSummaryLabel"
                            text="Convertidor 11.8.1 · DSD sin configurar"
                            styleClass="secondary-text"/>
@@ -220,7 +241,7 @@
 
                     <Button text="Restablecer formulario"
                             onAction="#onResetForm"
-                            styleClass="secondary-button"/>
+                            styleClass="warning-button"/>
 
                     <Button fx:id="convertButton"
                             text="Convertir a SDMX-XML"
@@ -250,7 +271,7 @@
 
                         <Button text="Limpiar"
                                 onAction="#onClearActivityLog"
-                                styleClass="secondary-button"/>
+                                styleClass="danger-button"/>
 
                         <Button text="Copiar"
                                 onAction="#onCopyActivityLog"

@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="io.github.ordonovus.sdmxconverter.presentation.controller.ConverterManagementController"
+            prefWidth="900"
+            prefHeight="620"
+            styleClass="settings-root">
+
+    <left>
+        <VBox prefWidth="215"
+              minWidth="215"
+              maxWidth="215"
+              spacing="20"
+              styleClass="settings-sidebar">
+
+            <padding>
+                <Insets top="26"
+                        right="18"
+                        bottom="26"
+                        left="18"/>
+            </padding>
+
+            <VBox spacing="4">
+                <Label text="Configuración"
+                       styleClass="settings-title"/>
+
+                <Label text="Opciones de la aplicación"
+                       wrapText="true"
+                       styleClass="settings-subtitle"/>
+            </VBox>
+
+            <VBox spacing="8">
+                <Button text="Convertidor SDMX"
+                        maxWidth="Infinity"
+                        focusTraversable="false"
+                        mouseTransparent="true"
+                        styleClass="settings-navigation-button, settings-navigation-button-selected"/>
+            </VBox>
+
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <Label text="Convertidor SDMX"
+                   wrapText="true"
+                   styleClass="settings-application-name"/>
+        </VBox>
+    </left>
+
+    <center>
+        <ScrollPane fitToWidth="true"
+                    hbarPolicy="NEVER"
+                    styleClass="settings-content-scroll">
+
+            <VBox spacing="20">
+                <padding>
+                    <Insets top="26"
+                            right="30"
+                            bottom="26"
+                            left="30"/>
+                </padding>
+
+                <VBox spacing="5">
+                    <Label text="Convertidor SDMX"
+                           styleClass="dialog-title"/>
+
+                    <Label text="Administra la instalación utilizada para realizar las conversiones."
+                           wrapText="true"
+                           styleClass="secondary-text"/>
+                </VBox>
+
+                <VBox spacing="16"
+                      styleClass="card">
+
+                    <VBox spacing="4">
+                        <Label text="Perfil de compatibilidad"
+                               styleClass="section-title"/>
+
+                        <Label text="Solo se activarán instalaciones compatibles y previamente validadas."
+                               wrapText="true"
+                               styleClass="secondary-text"/>
+                    </VBox>
+
+                    <HBox alignment="CENTER_LEFT"
+                          spacing="32">
+
+                        <VBox spacing="4"
+                              HBox.hgrow="ALWAYS">
+
+                            <Label text="Versión del convertidor"
+                                   styleClass="configuration-key"/>
+
+                            <Label fx:id="converterVersionValueLabel"
+                                   text="-"
+                                   styleClass="configuration-value"/>
+                        </VBox>
+
+                        <VBox spacing="4"
+                              HBox.hgrow="ALWAYS">
+
+                            <Label text="Java requerido"
+                                   styleClass="configuration-key"/>
+
+                            <Label fx:id="requiredJavaValueLabel"
+                                   text="-"
+                                   styleClass="configuration-value"/>
+                        </VBox>
+                    </HBox>
+                </VBox>
+
+                <VBox spacing="16"
+                      styleClass="card">
+
+                    <VBox spacing="6">
+                        <Label text="Carpeta del convertidor"
+                               styleClass="section-title"/>
+
+                        <Label text="Selecciona la carpeta principal de ConverterCLIApp."
+                               wrapText="true"
+                               styleClass="secondary-text"/>
+
+                        <TextField fx:id="converterDirectoryField"
+                                   editable="false"
+                                   promptText="No se ha configurado la carpeta del convertidor"/>
+                    </VBox>
+
+                    <VBox spacing="6">
+                        <Label text="Ejecutable de Java"
+                               styleClass="section-title"/>
+
+                        <Label text="Este Java es privado para el convertidor y no modifica JAVA_HOME."
+                               wrapText="true"
+                               styleClass="secondary-text"/>
+
+                        <TextField fx:id="javaExecutableField"
+                                   editable="false"
+                                   promptText="No se ha configurado el ejecutable de Java"/>
+                    </VBox>
+
+                    <HBox alignment="CENTER_RIGHT"
+                          spacing="12">
+
+                        <Button fx:id="restoreInstallationButton"
+                                text="Restaurar predeterminado"
+                                onAction="#onRestoreInstallation"
+                                styleClass="warning-button"/>
+
+                        <Button fx:id="selectInstallationButton"
+                                text="Seleccionar instalación"
+                                onAction="#onSelectInstallation"
+                                styleClass="secondary-button"/>
+
+                        <Button fx:id="validateInstallationButton"
+                                text="Validar"
+                                onAction="#onValidateInstallation"
+                                styleClass="primary-button"/>
+                    </HBox>
+                </VBox>
+
+                <VBox spacing="12"
+                      styleClass="card">
+
+                    <HBox alignment="CENTER_LEFT"
+                          spacing="12">
+
+                        <VBox spacing="4">
+                            <Label text="Resultado de la validación"
+                                   styleClass="section-title"/>
+
+                            <Label fx:id="validationStatusLabel"
+                                   text="La instalación todavía no se ha validado."
+                                   wrapText="true"
+                                   styleClass="converter-validation-status"/>
+                        </VBox>
+
+                        <Region HBox.hgrow="ALWAYS"/>
+
+                        <ProgressIndicator fx:id="validationProgressIndicator"
+                                           prefWidth="28"
+                                           prefHeight="28"
+                                           maxWidth="28"
+                                           maxHeight="28"/>
+                    </HBox>
+
+                    <ScrollPane fitToWidth="true"
+                                prefHeight="130"
+                                minHeight="110"
+                                hbarPolicy="NEVER"
+                                styleClass="converter-validation-scroll">
+
+                        <VBox fx:id="validationMessagesBox"
+                              spacing="8"
+                              styleClass="converter-validation-messages">
+
+                            <padding>
+                                <Insets top="12"
+                                        right="14"
+                                        bottom="12"
+                                        left="14"/>
+                            </padding>
+                        </VBox>
+                    </ScrollPane>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+    </center>
+
+    <bottom>
+        <HBox alignment="CENTER_RIGHT"
+              styleClass="settings-footer">
+
+            <padding>
+                <Insets top="14"
+                        right="30"
+                        bottom="14"
+                        left="30"/>
+            </padding>
+
+            <Button text="Cerrar"
+                    onAction="#onClose"
+                    cancelButton="true"
+                    styleClass="dialog-close-button"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

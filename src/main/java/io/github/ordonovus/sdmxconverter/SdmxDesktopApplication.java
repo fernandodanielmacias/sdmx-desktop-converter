@@ -3,6 +3,7 @@ package io.github.ordonovus.sdmxconverter;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -51,6 +52,15 @@ public final class SdmxDesktopApplication extends Application {
         stage.setMinWidth(MINIMUM_WIDTH);
         stage.setMinHeight(MINIMUM_HEIGHT);
         stage.setScene(scene);
+
+        String icon = Objects.requireNonNull(
+                SdmxDesktopApplication.class.getResource(
+                        "/images/application-icon.png"
+                ),
+                "Application icon was not found"
+        ).toExternalForm();
+
+        stage.getIcons().add(new Image(icon));
         stage.show();
     }
 
