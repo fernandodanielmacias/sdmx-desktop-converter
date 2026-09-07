@@ -100,6 +100,12 @@ public final class MainController {
     private TableColumn<ConversionFileRow, String> statusColumn;
 
     @FXML
+    private TableColumn<ConversionFileRow, String> seriesCountColumn;
+
+    @FXML
+    private TableColumn<ConversionFileRow, String> observationCountColumn;
+
+    @FXML
     private TextField outputDirectoryField;
 
     @FXML
@@ -535,6 +541,13 @@ public final class MainController {
         statusColumn.setCellValueFactory(
                 cell -> cell.getValue().statusProperty()
         );
+        seriesCountColumn.setCellValueFactory(
+                cell -> cell.getValue().seriesCountProperty()
+        );
+
+        observationCountColumn.setCellValueFactory(
+                cell -> cell.getValue().observationCountProperty()
+        );
 
         outputFileNameColumn.setCellFactory(
                 TextFieldTableCell.forTableColumn()
@@ -556,11 +569,13 @@ public final class MainController {
             TableColumn.CellEditEvent<ConversionFileRow, String> event
     ) {
         ConversionFileRow editedRow = event.getRowValue();
+        String previousFileName = editedRow.getOutputFileName();
+        String enteredFileName = event.getNewValue();
 
         try {
             String normalizedFileName =
                     outputFileNameService.normalize(
-                            event.getNewValue()
+                            enteredFileName
                     );
 
             outputFileNameService.validateUnique(
@@ -570,15 +585,37 @@ public final class MainController {
 
             editedRow.setOutputFileName(normalizedFileName);
             editedRow.setStatus("Pendiente");
+            editedRow.clearConversionCounts();
 
             activityLogManager.add(
                     ActivityLogLevel.INFORMATION,
-                    "Nombre del archivo de salida actualizado."
+                    "El archivo de salida para \""
+                            + editedRow.getPath().getFileName()
+                            + "\" se actualizó a \""
+                            + normalizedFileName
+                            + "\"."
             );
         } catch (IllegalArgumentException exception) {
+            editedRow.setOutputFileName(previousFileName);
+
+            String attemptedFileName =
+                    enteredFileName == null || enteredFileName.isBlank()
+                            ? "(nombre vacío)"
+                            : enteredFileName;
+
+            String failureMessage =
+                    exception.getMessage() == null
+                            ? "El nombre indicado no es válido."
+                            : exception.getMessage();
+
             activityLogManager.add(
                     ActivityLogLevel.ERROR,
-                    exception.getMessage()
+                    "No se pudo cambiar el archivo de salida de \""
+                            + editedRow.getPath().getFileName()
+                            + "\" a \""
+                            + attemptedFileName
+                            + "\": "
+                            + failureMessage
             );
         } finally {
             Platform.runLater(filesTable::refresh);

@@ -318,7 +318,9 @@ public final class ConversionWorkflowManager {
             ConversionQueueItem queueItem
     ) {
         currentItemNumber++;
+
         queueItem.row().setStatus(STATUS_CONVERTING);
+        queueItem.row().clearConversionCounts();
 
         String inputFileName = queueItem.request()
                 .inputFile()
@@ -353,6 +355,7 @@ public final class ConversionWorkflowManager {
         }
 
         queueItem.row().setStatus(STATUS_ERROR);
+        queueItem.row().clearConversionCounts();
 
         outcome.result().ifPresentOrElse(
                 result -> logUnsuccessfulResult(
@@ -371,6 +374,10 @@ public final class ConversionWorkflowManager {
             SdmxConversionResult result
     ) {
         queueItem.row().setStatus(STATUS_COMPLETED);
+        queueItem.row().setConversionCounts(
+                result.seriesCount(),
+                result.observationCount()
+        );
 
         activityLogManager.addToHistory(
                 ActivityLogLevel.SUCCESS,

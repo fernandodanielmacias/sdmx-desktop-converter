@@ -65,8 +65,7 @@
                     pannable="true"
                     styleClass="content-scroll-pane">
 
-            <VBox fx:id="conversionContent"
-                    spacing="20">
+            <VBox spacing="20">
                 <padding>
                     <Insets top="28"
                             right="32"
@@ -118,23 +117,39 @@
                         <columns>
                             <TableColumn fx:id="fileNameColumn"
                                          text="Archivo de entrada"
-                                         prefWidth="220"
-                                         minWidth="160"/>
+                                         prefWidth="195"
+                                         minWidth="150"/>
 
                             <TableColumn fx:id="outputFileNameColumn"
                                          text="Nombre del XML"
-                                         prefWidth="220"
-                                         minWidth="160"/>
+                                         prefWidth="195"
+                                         minWidth="150"/>
 
                             <TableColumn fx:id="filePathColumn"
                                          text="Ubicación"
-                                         prefWidth="475"
-                                         minWidth="260"/>
+                                         prefWidth="355"
+                                         minWidth="220"/>
 
                             <TableColumn fx:id="statusColumn"
                                          text="Estado"
+                                         prefWidth="115"
+                                         minWidth="100"/>
+
+                            <TableColumn fx:id="seriesCountColumn"
+                                         text="Series"
+                                         minWidth="75"
+                                         prefWidth="80"
+                                         maxWidth="80"
+                                         resizable="false"
+                                         sortable="false"/>
+
+                            <TableColumn fx:id="observationCountColumn"
+                                         text="Observaciones"
+                                         minWidth="135"
                                          prefWidth="135"
-                                         minWidth="110"/>
+                                         maxWidth="135"
+                                         resizable="false"
+                                         sortable="false"/>
                         </columns>
                     </TableView>
                 </VBox>
