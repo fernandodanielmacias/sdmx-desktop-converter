@@ -1,4 +1,4 @@
-package io.github.ordonovus.sdmxconverter.application.converter;
+package io.github.ordonovus.sdmxconverter.application.converter.installation;
 
 import java.util.List;
 import java.util.Objects;

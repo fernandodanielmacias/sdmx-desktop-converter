@@ -1,13 +1,20 @@
 package io.github.ordonovus.sdmxconverter.presentation.controller;
 
-import io.github.ordonovus.sdmxconverter.application.converter.ConverterInstallationManager;
-import io.github.ordonovus.sdmxconverter.application.converter.ConverterInstallationProvider;
-import io.github.ordonovus.sdmxconverter.application.converter.ConverterInstallationValidator;
+import io.github.ordonovus.sdmxconverter.application.conversion.SdmxConversionParameters;
+import io.github.ordonovus.sdmxconverter.application.conversion.SdmxConversionRequestValidator;
+import io.github.ordonovus.sdmxconverter.application.conversion.SdmxConversionService;
+import io.github.ordonovus.sdmxconverter.application.converter.installation.ConverterInstallationManager;
+import io.github.ordonovus.sdmxconverter.application.converter.installation.ConverterInstallationProvider;
+import io.github.ordonovus.sdmxconverter.application.converter.installation.ConverterInstallationValidator;
 import io.github.ordonovus.sdmxconverter.application.service.OutputFileNameService;
 import io.github.ordonovus.sdmxconverter.domain.model.DsdMetadata;
+import io.github.ordonovus.sdmxconverter.infrastructure.converter.SdmxConverterProcessExecutor;
 import io.github.ordonovus.sdmxconverter.infrastructure.sdmx.DsdMetadataReader;
+import io.github.ordonovus.sdmxconverter.infrastructure.xml.SdmxXmlValidator;
+import io.github.ordonovus.sdmxconverter.presentation.conversion.ConversionWorkflowManager;
 import io.github.ordonovus.sdmxconverter.presentation.dialog.SettingsDialog;
 import io.github.ordonovus.sdmxconverter.presentation.dialog.FileDialogService;
+import io.github.ordonovus.sdmxconverter.presentation.factory.ConversionQueueFactory;
 import io.github.ordonovus.sdmxconverter.presentation.log.ActivityLogManager;
 import io.github.ordonovus.sdmxconverter.presentation.model.ActivityLogEntry;
 import io.github.ordonovus.sdmxconverter.presentation.model.ActivityLogLevel;
@@ -17,6 +24,7 @@ import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Window;
 
@@ -54,6 +62,21 @@ public final class MainController {
 
     private final SettingsDialog settingsDialog =
             new SettingsDialog();
+
+    private final ConversionQueueFactory conversionQueueFactory =
+            new ConversionQueueFactory();
+
+    private final SdmxConversionService conversionService =
+            new SdmxConversionService(
+                    new SdmxConversionRequestValidator(),
+                    new SdmxConverterProcessExecutor(),
+                    new SdmxXmlValidator()
+            );
+
+    private final SdmxConversionParameters conversionParameters =
+            SdmxConversionParameters.defaults();
+
+    private ConversionWorkflowManager conversionWorkflowManager;
 
     private ActivityLogManager activityLogManager;
 
@@ -118,6 +141,39 @@ public final class MainController {
     @FXML
     private Button toggleActivityLogButton;
 
+    @FXML
+    private HBox conversionProgressContainer;
+
+    @FXML
+    private ProgressBar conversionProgressBar;
+
+    @FXML
+    private Label conversionProgressLabel;
+
+    @FXML
+    private Button cancelConversionButton;
+
+    @FXML
+    private Button removeSelectedFilesButton;
+
+    @FXML
+    private Button clearFilesButton;
+
+    @FXML
+    private Button chooseFilesButton;
+
+    @FXML
+    private Button chooseOutputDirectoryButton;
+
+    @FXML
+    private Button chooseDsdFileButton;
+
+    @FXML
+    private Button chooseHeaderFileButton;
+
+    @FXML
+    private Button resetFormButton;
+
     /**
      * Configures the screen after all FXML elements have been injected.
      */
@@ -133,11 +189,31 @@ public final class MainController {
                 contentScrollPane
         );
 
+        conversionWorkflowManager =
+                new ConversionWorkflowManager(
+                        activityLogManager,
+                        conversionProgressContainer,
+                        conversionProgressBar,
+                        conversionProgressLabel,
+                        cancelConversionButton,
+                        filesTable,
+                        List.of(
+                                removeSelectedFilesButton,
+                                clearFilesButton,
+                                chooseFilesButton,
+                                chooseOutputDirectoryButton,
+                                chooseDsdFileButton,
+                                chooseHeaderFileButton,
+                                resetFormButton
+                        )
+                );
+
         convertButton.disableProperty().bind(
                 Bindings.isEmpty(filesTable.getItems())
                         .or(outputDirectoryField.textProperty().isEmpty())
                         .or(dsdFileField.textProperty().isEmpty())
                         .or(headerFileField.textProperty().isEmpty())
+                        .or(conversionWorkflowManager.runningProperty())
         );
 
         updateSelectionCount();
@@ -349,14 +425,14 @@ public final class MainController {
             );
         } catch (IOException exception) {
             generalStatusLabel.setText(
-                    "No fue posible abrir la configuración del convertidor."
+                    "No fue posible abrir la configuración."
             );
 
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.initOwner(getWindow());
             alert.setTitle("Error de configuración");
             alert.setHeaderText(
-                    "No fue posible abrir la administración del convertidor."
+                    "No fue posible abrir la configuración de la aplicación."
             );
             alert.setContentText(
                     exception.getMessage() == null
@@ -368,15 +444,82 @@ public final class MainController {
     }
 
     /**
-     * Handles the conversion action until the Converter integration is added.
+     * Validates the current configuration and starts the conversion batch.
      */
     @FXML
     private void onConvert() {
-        activityLogManager.add(
-                ActivityLogLevel.WARNING,
-                "La integración con el Convertidor SDMX todavía "
-                        + "no está disponible."
-        );
+        if (conversionWorkflowManager.isRunning()) {
+            return;
+        }
+
+        if (selectedDsdFile == null
+                || selectedDsdMetadata == null
+                || selectedHeaderFile == null) {
+            activityLogManager.add(ActivityLogLevel.ERROR, "La configuración SDMX está incompleta.");
+            return;
+        }
+
+        var installationValidation = converterInstallationManager.validateActiveInstallation();
+
+        for (String warning : installationValidation.warnings()) {
+            activityLogManager.add(ActivityLogLevel.WARNING, warning);
+        }
+
+        if (!installationValidation.isValid()) {
+            for (String error : installationValidation.errors()) {
+                activityLogManager.add(ActivityLogLevel.ERROR, error);
+            }
+
+            activityLogManager.add(ActivityLogLevel.ERROR,
+                    "El Convertidor SDMX no está configurado "
+                            + "correctamente."
+            );
+            return;
+        }
+
+        try {
+            Path outputDirectory = Path.of(
+                    outputDirectoryField.getText()
+            ).toAbsolutePath().normalize();
+
+            var queueItems = conversionQueueFactory.create(
+                    List.copyOf(filesTable.getItems()),
+                    outputDirectory,
+                    selectedDsdFile,
+                    selectedHeaderFile,
+                    selectedDsdMetadata,
+                    conversionParameters
+            );
+
+            filesTable.getItems().forEach(
+                    row -> row.setStatus("Pendiente")
+            );
+
+            conversionWorkflowManager.start(
+                    conversionService,
+                    converterInstallationManager
+                            .getActiveInstallation(),
+                    queueItems,
+                    ignoredOutcomes -> {
+                        filesTable.refresh();
+                    }
+            );
+        } catch (IllegalArgumentException exception) {
+            activityLogManager.add(
+                    ActivityLogLevel.ERROR,
+                    exception.getMessage() == null
+                            ? "La solicitud de conversión no es válida."
+                            : exception.getMessage()
+            );
+        }
+    }
+
+    /**
+     * Requests cancellation of the active conversion batch.
+     */
+    @FXML
+    private void onCancelConversion() {
+        conversionWorkflowManager.cancel();
     }
 
     private void configureTable() {

@@ -1,8 +1,8 @@
 package io.github.ordonovus.sdmxconverter.presentation.controller;
 
-import io.github.ordonovus.sdmxconverter.application.converter.ConverterInstallation;
-import io.github.ordonovus.sdmxconverter.application.converter.ConverterInstallationManager;
-import io.github.ordonovus.sdmxconverter.application.converter.ConverterInstallationValidationResult;
+import io.github.ordonovus.sdmxconverter.application.converter.installation.ConverterInstallation;
+import io.github.ordonovus.sdmxconverter.application.converter.installation.ConverterInstallationManager;
+import io.github.ordonovus.sdmxconverter.application.converter.installation.ConverterInstallationValidationResult;
 import io.github.ordonovus.sdmxconverter.presentation.dialog.FileDialogService;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;

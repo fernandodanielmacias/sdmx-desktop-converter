@@ -1,4 +1,4 @@
-package io.github.ordonovus.sdmxconverter.application.converter;
+package io.github.ordonovus.sdmxconverter.application.converter.installation;
 
 import java.nio.file.Path;
 import java.util.Objects;

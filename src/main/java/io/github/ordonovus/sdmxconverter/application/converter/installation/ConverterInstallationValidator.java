@@ -1,4 +1,4 @@
-package io.github.ordonovus.sdmxconverter.application.converter;
+package io.github.ordonovus.sdmxconverter.application.converter.installation;
 
 import java.io.IOException;
 import java.io.InputStream;

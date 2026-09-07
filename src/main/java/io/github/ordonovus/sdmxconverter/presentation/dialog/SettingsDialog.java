@@ -1,6 +1,6 @@
 package io.github.ordonovus.sdmxconverter.presentation.dialog;
 
-import io.github.ordonovus.sdmxconverter.application.converter.ConverterInstallationManager;
+import io.github.ordonovus.sdmxconverter.application.converter.installation.ConverterInstallationManager;
 import io.github.ordonovus.sdmxconverter.presentation.controller.ConverterManagementController;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;

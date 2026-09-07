@@ -649,3 +649,26 @@
     -fx-border-color: #d4e1e9;
     -fx-border-width: 1px 0 0 0;
 }
+
+
+.conversion-progress-text {
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-font-size: 13px;
+    -fx-text-fill: #315f78;
+}
+
+.progress-bar {
+    -fx-accent: #25866f;
+}
+
+.progress-bar > .track {
+    -fx-background-color: #dce9ee;
+    -fx-background-radius: 6px;
+}
+
+.progress-bar > .bar {
+    -fx-background-color: #25866f;
+    -fx-background-radius: 6px;
+    -fx-background-insets: 0;
+    -fx-padding: 5px;
+}

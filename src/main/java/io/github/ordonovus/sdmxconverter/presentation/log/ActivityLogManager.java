@@ -76,7 +76,7 @@ public final class ActivityLogManager {
     }
 
     /**
-     * Adds an entry and updates the current general status.
+     * Adds an activity entry and updates the general status.
      *
      * @param level severity level assigned to the activity
      * @param message description displayed to the user
@@ -85,13 +85,44 @@ public final class ActivityLogManager {
             ActivityLogLevel level,
             String message
     ) {
-        ActivityLogEntry entry =
-                ActivityLogEntry.now(level, message);
+        addToHistory(level, message);
+        showStatus(level, message);
+    }
+
+    /**
+     * Adds an entry to the activity history without changing the general
+     * status message.
+     *
+     * @param level severity level assigned to the activity
+     * @param message description stored in the activity history
+     */
+    public void addToHistory(
+            ActivityLogLevel level,
+            String message
+    ) {
+        ActivityLogEntry entry = ActivityLogEntry.now(
+                requireLevel(level),
+                requireMessage(message)
+        );
 
         activityLogList.getItems().add(entry);
-        updateGeneralStatus(level, message);
-
         Platform.runLater(this::scrollToLastEntry);
+    }
+
+    /**
+     * Updates the general status without adding an activity history entry.
+     *
+     * @param level severity level assigned to the status
+     * @param message current general status message
+     */
+    public void showStatus(
+            ActivityLogLevel level,
+            String message
+    ) {
+        updateGeneralStatus(
+                requireLevel(level),
+                requireMessage(message)
+        );
     }
 
     /**
@@ -122,7 +153,7 @@ public final class ActivityLogManager {
     public void clear() {
         activityLogList.getItems().clear();
 
-        updateGeneralStatus(
+        showStatus(
                 ActivityLogLevel.INFORMATION,
                 "El registro de actividad está vacío."
         );
@@ -147,7 +178,7 @@ public final class ActivityLogManager {
      */
     public void copyToClipboard() {
         if (activityLogList.getItems().isEmpty()) {
-            updateGeneralStatus(
+            showStatus(
                     ActivityLogLevel.WARNING,
                     "No hay actividad para copiar."
             );
@@ -170,7 +201,7 @@ public final class ActivityLogManager {
                 clipboardContent
         );
 
-        updateGeneralStatus(
+        showStatus(
                 ActivityLogLevel.SUCCESS,
                 "El registro de actividad se copió al portapapeles."
         );
@@ -191,9 +222,6 @@ public final class ActivityLogManager {
             ActivityLogLevel level,
             String message
     ) {
-        Objects.requireNonNull(level, "level");
-        Objects.requireNonNull(message, "message");
-
         generalStatusLabel.getStyleClass().removeAll(
                 STATUS_STYLE_CLASSES
         );
@@ -208,6 +236,27 @@ public final class ActivityLogManager {
         };
 
         generalStatusLabel.setText(displayedMessage);
+    }
+
+    private ActivityLogLevel requireLevel(
+            ActivityLogLevel level
+    ) {
+        return Objects.requireNonNull(level, "level");
+    }
+
+    private String requireMessage(String message) {
+        String validatedMessage = Objects.requireNonNull(
+                message,
+                "message"
+        );
+
+        if (validatedMessage.isBlank()) {
+            throw new IllegalArgumentException(
+                    "message must not be blank"
+            );
+        }
+
+        return validatedMessage;
     }
 
     private String getStatusStyleClass(
@@ -237,4 +286,5 @@ public final class ActivityLogManager {
             activityLogList.scrollTo(lastIndex);
         }
     }
+
 }
