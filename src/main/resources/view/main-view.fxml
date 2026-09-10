@@ -198,6 +198,12 @@
                                 text="Seleccionar carpeta"
                                 onAction="#onChooseOutputDirectory"
                                 styleClass="secondary-button"/>
+
+                        <Button fx:id="openOutputDirectoryButton"
+                                text="Abrir carpeta"
+                                onAction="#onOpenOutputDirectory"
+                                styleClass="secondary-button"/>
+
                     </HBox>
                 </VBox>
 
@@ -308,6 +314,10 @@
                         <Button text="Copiar"
                                 onAction="#onCopyActivityLog"
                                 styleClass="secondary-button"/>
+
+                        <Button text="Guardar registro"
+                                onAction="#onSaveActivityLog"
+                                styleClass="primary-button"/>
                     </HBox>
 
                     <ListView fx:id="activityLogList"

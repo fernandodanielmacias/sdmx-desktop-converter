@@ -9,6 +9,7 @@ import io.github.ordonovus.sdmxconverter.application.converter.installation.Conv
 import io.github.ordonovus.sdmxconverter.application.service.OutputFileNameService;
 import io.github.ordonovus.sdmxconverter.domain.model.DsdMetadata;
 import io.github.ordonovus.sdmxconverter.infrastructure.converter.SdmxConverterProcessExecutor;
+import io.github.ordonovus.sdmxconverter.infrastructure.desktop.DesktopDirectoryOpener;
 import io.github.ordonovus.sdmxconverter.infrastructure.sdmx.DsdMetadataReader;
 import io.github.ordonovus.sdmxconverter.infrastructure.xml.SdmxXmlValidator;
 import io.github.ordonovus.sdmxconverter.presentation.cell.ConversionStatusTableCell;
@@ -16,6 +17,7 @@ import io.github.ordonovus.sdmxconverter.presentation.conversion.ConversionWorkf
 import io.github.ordonovus.sdmxconverter.presentation.dialog.SettingsDialog;
 import io.github.ordonovus.sdmxconverter.presentation.dialog.FileDialogService;
 import io.github.ordonovus.sdmxconverter.presentation.factory.ConversionQueueFactory;
+import io.github.ordonovus.sdmxconverter.presentation.log.ActivityLogFileExporter;
 import io.github.ordonovus.sdmxconverter.presentation.log.ActivityLogManager;
 import io.github.ordonovus.sdmxconverter.presentation.model.ActivityLogEntry;
 import io.github.ordonovus.sdmxconverter.presentation.model.ActivityLogLevel;
@@ -72,6 +74,12 @@ public final class MainController {
                     new SdmxConverterProcessExecutor(),
                     new SdmxXmlValidator()
             );
+
+    private final DesktopDirectoryOpener desktopDirectoryOpener =
+            new DesktopDirectoryOpener();
+
+    private final ActivityLogFileExporter activityLogFileExporter =
+            new ActivityLogFileExporter();
 
     private final SdmxConversionParameters conversionParameters =
             SdmxConversionParameters.defaults();
@@ -175,6 +183,9 @@ public final class MainController {
     private Button chooseOutputDirectoryButton;
 
     @FXML
+    private Button openOutputDirectoryButton;
+
+    @FXML
     private Button chooseDsdFileButton;
 
     @FXML
@@ -224,6 +235,10 @@ public final class MainController {
                         .or(dsdFileField.textProperty().isEmpty())
                         .or(headerFileField.textProperty().isEmpty())
                         .or(conversionWorkflowManager.runningProperty())
+        );
+
+        openOutputDirectoryButton.disableProperty().bind(
+                outputDirectoryField.textProperty().isEmpty()
         );
 
         updateSelectionCount();
@@ -319,6 +334,46 @@ public final class MainController {
                     "Carpeta de salida seleccionada."
             );
         });
+    }
+
+    /**
+     * Opens the configured output directory in the operating system file manager.
+     */
+    @FXML
+    private void onOpenOutputDirectory() {
+        Path outputDirectory = getOutputDirectory();
+
+        if (outputDirectory == null) {
+            activityLogManager.add(
+                    ActivityLogLevel.ERROR,
+                    "No se puede abrir la carpeta de salida porque "
+                            + "la ubicación no existe o no es válida."
+            );
+            return;
+        }
+
+        try {
+            desktopDirectoryOpener.open(outputDirectory);
+
+            activityLogManager.add(
+                    ActivityLogLevel.INFORMATION,
+                    "Se abrió la carpeta de salida: "
+                            + outputDirectory
+            );
+        } catch (IOException | SecurityException exception) {
+            String failureMessage =
+                    exception.getMessage() == null
+                            ? "El sistema operativo rechazó la operación."
+                            : exception.getMessage();
+
+            activityLogManager.add(
+                    ActivityLogLevel.ERROR,
+                    "No se pudo abrir la carpeta de salida \""
+                            + outputDirectory
+                            + "\": "
+                            + failureMessage
+            );
+        }
     }
 
     /**
@@ -421,6 +476,55 @@ public final class MainController {
     @FXML
     private void onCopyActivityLog() {
         activityLogManager.copyToClipboard();
+    }
+
+    /**
+     * Exports the current activity history to a user-selected directory.
+     */
+    @FXML
+    private void onSaveActivityLog() {
+        List<ActivityLogEntry> entries =
+                activityLogManager.getEntriesSnapshot();
+
+        if (entries.isEmpty()) {
+            activityLogManager.add(
+                    ActivityLogLevel.WARNING,
+                    "No hay actividad para guardar."
+            );
+            return;
+        }
+
+        fileDialogService.chooseActivityLogDirectory(
+                getWindow(),
+                getPreferredInitialLocation(null)
+        ).ifPresent(directory -> {
+            try {
+                Path logFile = activityLogFileExporter.export(
+                        directory,
+                        entries
+                );
+
+                activityLogManager.add(
+                        ActivityLogLevel.SUCCESS,
+                        "El registro se guardó correctamente en \""
+                                + logFile
+                                + "\"."
+                );
+            } catch (IOException exception) {
+                String failureMessage =
+                        exception.getMessage() == null
+                                ? "No se pudo escribir el archivo."
+                                : exception.getMessage();
+
+                activityLogManager.add(
+                        ActivityLogLevel.ERROR,
+                        "No se pudo guardar el registro en \""
+                                + directory
+                                + "\": "
+                                + failureMessage
+                );
+            }
+        });
     }
 
     /**

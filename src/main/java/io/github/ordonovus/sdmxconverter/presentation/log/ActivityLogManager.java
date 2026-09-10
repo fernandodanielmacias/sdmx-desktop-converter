@@ -110,6 +110,15 @@ public final class ActivityLogManager {
     }
 
     /**
+     * Returns an immutable snapshot of the current activity history.
+     *
+     * @return activity entries available at the time of the request
+     */
+    public List<ActivityLogEntry> getEntriesSnapshot() {
+        return List.copyOf(activityLogList.getItems());
+    }
+
+    /**
      * Updates the general status without adding an activity history entry.
      *
      * @param level severity level assigned to the status

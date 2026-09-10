@@ -127,6 +127,24 @@ public final class FileDialogService {
     }
 
     /**
+     * Opens a dialog for selecting the activity log destination directory.
+     *
+     * @param owner owner window of the dialog
+     * @param initialLocation preferred initial file or directory
+     * @return selected normalized directory, or empty when cancelled
+     */
+    public Optional<Path> chooseActivityLogDirectory(
+            Window owner,
+            Path initialLocation
+    ) {
+        return chooseDirectory(
+                owner,
+                "Seleccionar carpeta para guardar el registro",
+                initialLocation
+        );
+    }
+
+    /**
      * Opens a dialog for selecting a ConverterCLIApp installation directory.
      *
      * @param owner owner window of the dialog
