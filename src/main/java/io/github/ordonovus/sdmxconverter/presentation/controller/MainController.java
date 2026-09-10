@@ -11,6 +11,7 @@ import io.github.ordonovus.sdmxconverter.domain.model.DsdMetadata;
 import io.github.ordonovus.sdmxconverter.infrastructure.converter.SdmxConverterProcessExecutor;
 import io.github.ordonovus.sdmxconverter.infrastructure.sdmx.DsdMetadataReader;
 import io.github.ordonovus.sdmxconverter.infrastructure.xml.SdmxXmlValidator;
+import io.github.ordonovus.sdmxconverter.presentation.cell.ConversionStatusTableCell;
 import io.github.ordonovus.sdmxconverter.presentation.conversion.ConversionWorkflowManager;
 import io.github.ordonovus.sdmxconverter.presentation.dialog.SettingsDialog;
 import io.github.ordonovus.sdmxconverter.presentation.dialog.FileDialogService;
@@ -541,12 +542,21 @@ public final class MainController {
         statusColumn.setCellValueFactory(
                 cell -> cell.getValue().statusProperty()
         );
+        statusColumn.setCellFactory(
+                ignored -> new ConversionStatusTableCell()
+        );
         seriesCountColumn.setCellValueFactory(
                 cell -> cell.getValue().seriesCountProperty()
         );
-
         observationCountColumn.setCellValueFactory(
                 cell -> cell.getValue().observationCountProperty()
+        );
+
+        seriesCountColumn.setStyle(
+                "-fx-alignment: CENTER;"
+        );
+        observationCountColumn.setStyle(
+                "-fx-alignment: CENTER;"
         );
 
         outputFileNameColumn.setCellFactory(

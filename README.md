@@ -17,9 +17,21 @@ Initial project configuration.
 
 ## Development requirements
 
+- IntelliJ IDEA 2024.3.3 or later
 - JDK 21
-- Maven 3.9 or later
-- IntelliJ IDEA 2024.3.3 or another compatible IDE
+- Apache Maven 3.9 or later
+- JavaFX 21, managed through Maven
+- Windows 10 or later
+
+The project has been tested with Apache Maven 3.9.16.
+
+## Java runtimes
+
+The desktop application is developed and compiled with JDK 21.
+
+SDMX Converter 11.8.1 is executed with its own private Java 11 runtime.
+This runtime does not modify `JAVA_HOME` and does not need to be installed
+or configured by the end user.
 
 ## Running the application
 
