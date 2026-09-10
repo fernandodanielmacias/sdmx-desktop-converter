@@ -1,6 +1,7 @@
 package io.github.ordonovus.sdmxconverter.presentation.conversion;
 
 import io.github.ordonovus.sdmxconverter.application.conversion.SdmxConversionOutcome;
+import io.github.ordonovus.sdmxconverter.application.conversion.SdmxConversionRequest;
 import io.github.ordonovus.sdmxconverter.application.conversion.SdmxConversionResult;
 import io.github.ordonovus.sdmxconverter.application.conversion.SdmxConversionService;
 import io.github.ordonovus.sdmxconverter.application.converter.installation.ConverterInstallation;
@@ -20,6 +21,7 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.Pane;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -141,6 +143,9 @@ public final class ConversionWorkflowManager {
     /**
      * Starts a conversion batch.
      *
+     * <p>This overload preserves the original completion notification and does
+     * not retain the generated batch diagnostic.</p>
+     *
      * @param conversionService complete conversion service
      * @param installation active validated Converter installation
      * @param queueItems conversion queue
@@ -152,6 +157,37 @@ public final class ConversionWorkflowManager {
             List<ConversionQueueItem> queueItems,
             Consumer<List<SdmxConversionOutcome>> completionListener
     ) {
+        start(
+                conversionService,
+                installation,
+                queueItems,
+                completionListener,
+                ignoredDiagnostic -> {
+                }
+        );
+    }
+
+    /**
+     * Starts a conversion batch and reports its final diagnostic information.
+     *
+     * <p>The diagnostic listener is invoked when the batch completes, is
+     * cancelled or fails unexpectedly. This preserves outcomes produced before
+     * an interrupted batch stopped.</p>
+     *
+     * @param conversionService complete conversion service
+     * @param installation active validated Converter installation
+     * @param queueItems conversion queue
+     * @param completionListener listener notified when the complete queue was
+     *                           processed
+     * @param diagnosticListener listener notified with the final batch diagnostic
+     */
+    public void start(
+            SdmxConversionService conversionService,
+            ConverterInstallation installation,
+            List<ConversionQueueItem> queueItems,
+            Consumer<List<SdmxConversionOutcome>> completionListener,
+            Consumer<ConversionBatchDiagnostic> diagnosticListener
+    ) {
         Objects.requireNonNull(
                 conversionService,
                 "conversionService"
@@ -162,6 +198,10 @@ public final class ConversionWorkflowManager {
                 completionListener,
                 "completionListener"
         );
+        Objects.requireNonNull(
+                diagnosticListener,
+                "diagnosticListener"
+        );
 
         if (isRunning()) {
             throw new IllegalStateException(
@@ -169,14 +209,30 @@ public final class ConversionWorkflowManager {
             );
         }
 
+        List<ConversionQueueItem> safeQueueItems =
+                List.copyOf(queueItems);
+
+        if (safeQueueItems.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "queueItems must not be empty"
+            );
+        }
+
+        List<SdmxConversionRequest> requests =
+                safeQueueItems.stream()
+                .map(ConversionQueueItem::request)
+                .toList();
+
+        Instant startedAt = Instant.now();
+
         currentItemNumber = 0;
-        totalItems = queueItems.size();
+        totalItems = safeQueueItems.size();
 
         ConversionBatchTask task =
                 new ConversionBatchTask(
                         conversionService,
                         installation,
-                        queueItems,
+                        safeQueueItems,
                         this::handleItemStarted,
                         this::handleItemFinished
                 );
@@ -196,8 +252,21 @@ public final class ConversionWorkflowManager {
         );
 
         task.setOnSucceeded(event -> {
+            Instant finishedAt = Instant.now();
+
             List<SdmxConversionOutcome> outcomes =
                     task.getValue();
+
+            ConversionBatchDiagnostic diagnostic =
+                    ConversionBatchDiagnostic.completed(
+                            installation,
+                            requests,
+                            outcomes,
+                            startedAt,
+                            finishedAt
+                    );
+
+            String completionMessage = task.getMessage();
 
             finishTask();
 
@@ -212,14 +281,29 @@ public final class ConversionWorkflowManager {
 
             activityLogManager.add(
                     level,
-                    task.getMessage()
+                    completionMessage
             );
 
             completionListener.accept(outcomes);
+            diagnosticListener.accept(diagnostic);
         });
 
         task.setOnFailed(event -> {
-            Throwable failure = task.getException();
+            Instant finishedAt = Instant.now();
+
+            Throwable failure = resolveUnexpectedFailure(
+                    task.getException()
+            );
+
+            ConversionBatchDiagnostic diagnostic =
+                    ConversionBatchDiagnostic.failed(
+                            installation,
+                            requests,
+                            task.completedOutcomes(),
+                            startedAt,
+                            finishedAt,
+                            failure
+                    );
 
             markConvertingRowsAs(STATUS_ERROR);
             finishTask();
@@ -229,9 +313,22 @@ public final class ConversionWorkflowManager {
                     "El proceso de conversión terminó inesperadamente: "
                             + requireFailureMessage(failure)
             );
+
+            diagnosticListener.accept(diagnostic);
         });
 
         task.setOnCancelled(event -> {
+            Instant finishedAt = Instant.now();
+
+            ConversionBatchDiagnostic diagnostic =
+                    ConversionBatchDiagnostic.cancelled(
+                            installation,
+                            requests,
+                            task.completedOutcomes(),
+                            startedAt,
+                            finishedAt
+                    );
+
             markConvertingRowsAs(STATUS_CANCELLED);
             finishTask();
 
@@ -239,6 +336,8 @@ public final class ConversionWorkflowManager {
                     ActivityLogLevel.WARNING,
                     "El proceso de conversión fue cancelado."
             );
+
+            diagnosticListener.accept(diagnostic);
         });
 
         Thread worker = new Thread(
@@ -466,13 +565,26 @@ public final class ConversionWorkflowManager {
     private String formatProgressPercentage(
             double progress
     ) {
-        if (progress < 0) {
+        if (progress < 0
+                || totalItems == 1 && progress < 1) {
             return "En curso";
         }
 
         long percentage = Math.round(progress * 100);
 
         return percentage + " %";
+    }
+
+    private Throwable resolveUnexpectedFailure(
+            Throwable failure
+    ) {
+        if (failure != null) {
+            return failure;
+        }
+
+        return new IllegalStateException(
+                "The conversion task failed without reporting a cause"
+        );
     }
 
     private String requireFailureMessage(

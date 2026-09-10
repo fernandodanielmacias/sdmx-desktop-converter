@@ -19,6 +19,7 @@ import io.github.ordonovus.sdmxconverter.presentation.dialog.FileDialogService;
 import io.github.ordonovus.sdmxconverter.presentation.factory.ConversionQueueFactory;
 import io.github.ordonovus.sdmxconverter.presentation.log.ActivityLogFileExporter;
 import io.github.ordonovus.sdmxconverter.presentation.log.ActivityLogManager;
+import io.github.ordonovus.sdmxconverter.presentation.log.ConversionDiagnosticManager;
 import io.github.ordonovus.sdmxconverter.presentation.model.ActivityLogEntry;
 import io.github.ordonovus.sdmxconverter.presentation.model.ActivityLogLevel;
 import io.github.ordonovus.sdmxconverter.presentation.model.ConversionFileRow;
@@ -80,6 +81,9 @@ public final class MainController {
 
     private final ActivityLogFileExporter activityLogFileExporter =
             new ActivityLogFileExporter();
+
+    private final ConversionDiagnosticManager conversionDiagnosticManager =
+            new ConversionDiagnosticManager();
 
     private final SdmxConversionParameters conversionParameters =
             SdmxConversionParameters.defaults();
@@ -440,12 +444,14 @@ public final class MainController {
     }
 
     /**
-     * Restores the conversion form while preserving the SDMX configuration.
+     * Restores the conversion form and clears session diagnostics while
+     * preserving the SDMX configuration.
      */
     @FXML
     private void onResetForm() {
         filesTable.getItems().clear();
         outputDirectoryField.clear();
+        conversionDiagnosticManager.clear();
         updateSelectionCount();
 
         activityLogManager.reset(
@@ -463,10 +469,11 @@ public final class MainController {
     }
 
     /**
-     * Removes every entry from the visual activity log.
+     * Removes every visual activity entry and stored conversion diagnostic.
      */
     @FXML
     private void onClearActivityLog() {
+        conversionDiagnosticManager.clear();
         activityLogManager.clear();
     }
 
@@ -479,14 +486,18 @@ public final class MainController {
     }
 
     /**
-     * Exports the current activity history to a user-selected directory.
+     * Exports the current activity history and stored conversion diagnostics to
+     * a user-selected directory.
      */
     @FXML
     private void onSaveActivityLog() {
         List<ActivityLogEntry> entries =
                 activityLogManager.getEntriesSnapshot();
 
-        if (entries.isEmpty()) {
+        var diagnostics =
+                conversionDiagnosticManager.snapshot();
+
+        if (entries.isEmpty() && diagnostics.isEmpty()) {
             activityLogManager.add(
                     ActivityLogLevel.WARNING,
                     "No hay actividad para guardar."
@@ -501,7 +512,8 @@ public final class MainController {
             try {
                 Path logFile = activityLogFileExporter.export(
                         directory,
-                        entries
+                        entries,
+                        diagnostics
                 );
 
                 activityLogManager.add(
@@ -614,9 +626,8 @@ public final class MainController {
                     converterInstallationManager
                             .getActiveInstallation(),
                     queueItems,
-                    ignoredOutcomes -> {
-                        filesTable.refresh();
-                    }
+                    ignoredOutcomes -> filesTable.refresh(),
+                    conversionDiagnosticManager::add
             );
         } catch (IllegalArgumentException exception) {
             activityLogManager.add(

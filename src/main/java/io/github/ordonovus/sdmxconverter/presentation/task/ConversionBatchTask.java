@@ -22,7 +22,8 @@ import java.util.function.Consumer;
  * blocking the JavaFX Application Thread.
  *
  * <p>Individual conversion failures do not prevent the remaining queue
- * items from being processed.</p>
+ * items from being processed. Outcomes completed before cancellation or an
+ * unexpected task failure remain available for diagnostic purposes.</p>
  */
 public final class ConversionBatchTask
         extends Task<List<SdmxConversionOutcome>> {
@@ -35,6 +36,9 @@ public final class ConversionBatchTask
             ConversionQueueItem,
             SdmxConversionOutcome
             > itemFinishedListener;
+
+    private final List<SdmxConversionOutcome> completedOutcomes =
+            new ArrayList<>();
 
     /**
      * Creates a task for processing a conversion queue.
@@ -90,6 +94,20 @@ public final class ConversionBatchTask
     }
 
     /**
+     * Returns an immutable snapshot of outcomes completed by the task.
+     *
+     * <p>This method can also be used after cancellation or an unexpected
+     * failure to recover the results produced before the task stopped.</p>
+     *
+     * @return immutable snapshot of completed conversion outcomes
+     */
+    public List<SdmxConversionOutcome> completedOutcomes() {
+        synchronized (completedOutcomes) {
+            return List.copyOf(completedOutcomes);
+        }
+    }
+
+    /**
      * Processes every conversion queue item sequentially.
      *
      * @return immutable collection of individual conversion outcomes
@@ -98,9 +116,6 @@ public final class ConversionBatchTask
     @Override
     protected List<SdmxConversionOutcome> call()
             throws InterruptedException {
-        List<SdmxConversionOutcome> outcomes =
-                new ArrayList<>();
-
         int totalItems = queueItems.size();
 
         updateProgress(0, totalItems);
@@ -154,7 +169,7 @@ public final class ConversionBatchTask
                 );
             }
 
-            outcomes.add(outcome);
+            addCompletedOutcome(outcome);
 
             notifyItemFinished(
                     queueItem,
@@ -163,6 +178,9 @@ public final class ConversionBatchTask
 
             updateProgress(index + 1, totalItems);
         }
+
+        List<SdmxConversionOutcome> outcomes =
+                completedOutcomes();
 
         if (isCancelled()) {
             updateMessage("Conversión cancelada.");
@@ -173,7 +191,15 @@ public final class ConversionBatchTask
             );
         }
 
-        return List.copyOf(outcomes);
+        return outcomes;
+    }
+
+    private void addCompletedOutcome(
+            SdmxConversionOutcome outcome
+    ) {
+        synchronized (completedOutcomes) {
+            completedOutcomes.add(outcome);
+        }
     }
 
     private void notifyItemStarted(
