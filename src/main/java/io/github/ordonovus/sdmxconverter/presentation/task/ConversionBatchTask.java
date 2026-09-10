@@ -123,7 +123,6 @@ public final class ConversionBatchTask
                     "Convirtiendo "
                             + request.inputFile()
                             .getFileName()
-                            + "..."
             );
 
             SdmxConversionOutcome outcome;

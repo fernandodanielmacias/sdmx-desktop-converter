@@ -9,6 +9,7 @@ import io.github.ordonovus.sdmxconverter.presentation.model.ActivityLogLevel;
 import io.github.ordonovus.sdmxconverter.presentation.model.ConversionFileRow;
 import io.github.ordonovus.sdmxconverter.presentation.model.ConversionQueueItem;
 import io.github.ordonovus.sdmxconverter.presentation.task.ConversionBatchTask;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -40,6 +41,7 @@ public final class ConversionWorkflowManager {
     private final Pane progressContainer;
     private final ProgressBar progressBar;
     private final Label progressLabel;
+    private final Label progressPercentageLabel;
     private final Button cancelButton;
     private final TableView<ConversionFileRow> filesTable;
     private final List<Node> guardedControls;
@@ -58,6 +60,7 @@ public final class ConversionWorkflowManager {
      * @param progressContainer progress controls container
      * @param progressBar general batch progress bar
      * @param progressLabel current progress message label
+     * @param progressPercentageLabel label displaying the completed percentage
      * @param cancelButton conversion cancellation button
      * @param filesTable conversion file table
      * @param guardedControls controls disabled while conversion is running
@@ -67,6 +70,7 @@ public final class ConversionWorkflowManager {
             Pane progressContainer,
             ProgressBar progressBar,
             Label progressLabel,
+            Label progressPercentageLabel,
             Button cancelButton,
             TableView<ConversionFileRow> filesTable,
             List<Node> guardedControls
@@ -89,6 +93,11 @@ public final class ConversionWorkflowManager {
         this.progressLabel = Objects.requireNonNull(
                 progressLabel,
                 "progressLabel"
+        );
+
+        this.progressPercentageLabel = Objects.requireNonNull(
+                progressPercentageLabel,
+                "progressPercentageLabel"
         );
 
         this.cancelButton = Objects.requireNonNull(
@@ -273,6 +282,7 @@ public final class ConversionWorkflowManager {
     ) {
         progressBar.progressProperty().unbind();
         progressLabel.textProperty().unbind();
+        progressPercentageLabel.textProperty().unbind();
 
         progressBar.progressProperty().bind(
                 task.progressProperty()
@@ -280,6 +290,15 @@ public final class ConversionWorkflowManager {
 
         progressLabel.textProperty().bind(
                 task.messageProperty()
+        );
+
+        progressPercentageLabel.textProperty().bind(
+                Bindings.createStringBinding(
+                        () -> formatProgressPercentage(
+                                task.getProgress()
+                        ),
+                        task.progressProperty()
+                )
         );
     }
 
@@ -303,11 +322,13 @@ public final class ConversionWorkflowManager {
     private void finishTask() {
         progressBar.progressProperty().unbind();
         progressLabel.textProperty().unbind();
+        progressPercentageLabel.textProperty().unbind();
 
         setRunningState(false);
 
         progressBar.setProgress(0);
         progressLabel.setText("");
+        progressPercentageLabel.setText("0 %");
 
         currentItemNumber = 0;
         totalItems = 0;
@@ -329,7 +350,7 @@ public final class ConversionWorkflowManager {
 
         activityLogManager.addToHistory(
                 ActivityLogLevel.PROCESSING,
-                "Convirtiendo " + inputFileName + "..."
+                "Convirtiendo: " + inputFileName
         );
 
         activityLogManager.showStatus(
@@ -440,6 +461,18 @@ public final class ConversionWorkflowManager {
                         row.statusProperty().get()
                 ))
                 .forEach(row -> row.setStatus(status));
+    }
+
+    private String formatProgressPercentage(
+            double progress
+    ) {
+        if (progress < 0) {
+            return "En curso";
+        }
+
+        long percentage = Math.round(progress * 100);
+
+        return percentage + " %";
     }
 
     private String requireFailureMessage(

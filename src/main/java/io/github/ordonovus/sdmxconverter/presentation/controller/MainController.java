@@ -25,7 +25,6 @@ import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Window;
 
@@ -149,13 +148,16 @@ public final class MainController {
     private Button toggleActivityLogButton;
 
     @FXML
-    private HBox conversionProgressContainer;
+    private VBox conversionProgressContainer;
 
     @FXML
     private ProgressBar conversionProgressBar;
 
     @FXML
     private Label conversionProgressLabel;
+
+    @FXML
+    private Label conversionProgressPercentageLabel;
 
     @FXML
     private Button cancelConversionButton;
@@ -202,6 +204,7 @@ public final class MainController {
                         conversionProgressContainer,
                         conversionProgressBar,
                         conversionProgressLabel,
+                        conversionProgressPercentageLabel,
                         cancelConversionButton,
                         filesTable,
                         List.of(

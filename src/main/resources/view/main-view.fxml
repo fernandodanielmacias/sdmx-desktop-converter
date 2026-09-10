@@ -67,9 +67,9 @@
 
             <VBox spacing="20">
                 <padding>
-                    <Insets top="28"
+                    <Insets top="24"
                             right="32"
-                            bottom="28"
+                            bottom="24"
                             left="32"/>
                 </padding>
 
@@ -152,6 +152,34 @@
                                          sortable="false"/>
                         </columns>
                     </TableView>
+
+                    <VBox fx:id="conversionProgressContainer"
+                          spacing="8"
+                          visible="false"
+                          managed="false"
+                          styleClass="conversion-progress-panel">
+
+                        <HBox alignment="CENTER_LEFT"
+                              spacing="16">
+
+                            <Label fx:id="conversionProgressLabel"
+                                   text="Preparando conversiones..."
+                                   HBox.hgrow="ALWAYS"
+                                   styleClass="conversion-progress-text"/>
+
+                            <Region HBox.hgrow="ALWAYS"/>
+
+                            <Label fx:id="conversionProgressPercentageLabel"
+                                   text="0 %"
+                                   minWidth="55"
+                                   alignment="CENTER_RIGHT"
+                                   styleClass="conversion-progress-percentage"/>
+                        </HBox>
+
+                        <ProgressBar fx:id="conversionProgressBar"
+                                     progress="0"
+                                     maxWidth="Infinity"/>
+                    </VBox>
                 </VBox>
 
                 <VBox spacing="12"
@@ -254,54 +282,6 @@
                     </HBox>
                 </VBox>
 
-                <HBox alignment="CENTER_LEFT"
-                      spacing="16">
-
-                    <VBox spacing="7"
-                          HBox.hgrow="ALWAYS">
-
-                        <Label fx:id="configurationSummaryLabel"
-                               text="Convertidor 11.8.1 · DSD sin configurar"
-                               styleClass="secondary-text"/>
-
-                        <HBox fx:id="conversionProgressContainer"
-                              alignment="CENTER_LEFT"
-                              spacing="10"
-                              visible="false"
-                              managed="false">
-
-                            <ProgressBar fx:id="conversionProgressBar"
-                                         progress="0"
-                                         prefWidth="280"
-                                         maxWidth="360"
-                                         HBox.hgrow="ALWAYS"/>
-
-                            <Label fx:id="conversionProgressLabel"
-                                   text="Preparando conversiones..."
-                                   minWidth="220"
-                                   styleClass="conversion-progress-text"/>
-                        </HBox>
-                    </VBox>
-
-                    <Button fx:id="resetFormButton"
-                            text="Restablecer formulario"
-                            onAction="#onResetForm"
-                            styleClass="warning-button"/>
-
-                    <Button fx:id="cancelConversionButton"
-                            text="Cancelar"
-                            onAction="#onCancelConversion"
-                            visible="false"
-                            managed="false"
-                            styleClass="danger-button"/>
-
-                    <Button fx:id="convertButton"
-                            text="Convertir a SDMX-XML"
-                            onAction="#onConvert"
-                            defaultButton="true"
-                            styleClass="convert-button"/>
-                </HBox>
-
                 <VBox fx:id="activityLogPanel"
                       visible="false"
                       spacing="10"
@@ -342,27 +322,66 @@
     </center>
 
     <bottom>
-        <HBox alignment="CENTER_LEFT"
-              spacing="12"
-              styleClass="status-bar">
-            <padding>
-                <Insets top="10"
-                        right="32"
-                        bottom="10"
-                        left="32"/>
-            </padding>
+        <VBox>
+            <HBox alignment="CENTER_LEFT"
+                  spacing="16"
+                  styleClass="conversion-action-bar">
 
-            <Label fx:id="generalStatusLabel"
-                   text="Listo para seleccionar archivos."
-                   styleClass="status-text"/>
+                <padding>
+                    <Insets top="14"
+                            right="32"
+                            bottom="14"
+                            left="32"/>
+                </padding>
 
-            <Region HBox.hgrow="ALWAYS"/>
+                <Label fx:id="configurationSummaryLabel"
+                       text="Convertidor 11.8.1 · DSD sin configurar"
+                       styleClass="secondary-text"/>
 
-            <Button fx:id="toggleActivityLogButton"
-                    text="Mostrar actividad"
-                    onAction="#onToggleActivityLog"
-                    styleClass="activity-toggle-button"/>
-        </HBox>
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <Button fx:id="resetFormButton"
+                        text="Restablecer formulario"
+                        onAction="#onResetForm"
+                        styleClass="warning-button"/>
+
+                <Button fx:id="cancelConversionButton"
+                        text="Cancelar"
+                        onAction="#onCancelConversion"
+                        visible="false"
+                        managed="false"
+                        styleClass="danger-button"/>
+
+                <Button fx:id="convertButton"
+                        text="Convertir a SDMX-XML"
+                        onAction="#onConvert"
+                        defaultButton="true"
+                        styleClass="convert-button"/>
+            </HBox>
+
+            <HBox alignment="CENTER_LEFT"
+                  spacing="12"
+                  styleClass="status-bar">
+
+                <padding>
+                    <Insets top="10"
+                            right="32"
+                            bottom="10"
+                            left="32"/>
+                </padding>
+
+                <Label fx:id="generalStatusLabel"
+                       text="Listo para seleccionar archivos."
+                       styleClass="status-text"/>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <Button fx:id="toggleActivityLogButton"
+                        text="Mostrar actividad"
+                        onAction="#onToggleActivityLog"
+                        styleClass="activity-toggle-button"/>
+            </HBox>
+        </VBox>
     </bottom>
 
 </BorderPane>
