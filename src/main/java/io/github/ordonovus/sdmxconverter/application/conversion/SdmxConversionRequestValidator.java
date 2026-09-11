@@ -108,12 +108,43 @@ public final class SdmxConversionRequestValidator {
             );
         }
 
-        if (Files.exists(outputFile)) {
+        validateExistingOutput(request, errors);
+    }
+
+    private void validateExistingOutput(
+            SdmxConversionRequest request,
+            List<String> errors
+    ) {
+        Path outputFile = request.outputFile();
+
+        if (!Files.exists(outputFile)) {
+            return;
+        }
+
+        if (!Files.isRegularFile(outputFile)) {
+            errors.add(
+                    "La ruta del archivo XML de salida ya existe, "
+                            + "pero no corresponde a un archivo: "
+                            + outputFile
+            );
+            return;
+        }
+
+        if (request.existingOutputPolicy()
+                == ExistingOutputPolicy.REQUIRE_NEW) {
             errors.add(
                     "El archivo XML de salida ya existe: "
                             + outputFile.getFileName()
-                            + ". Cambie el nombre o elimine el archivo "
-                            + "existente antes de convertir."
+                            + ". Cambie el nombre, omita el archivo "
+                            + "o autorice su reemplazo."
+            );
+            return;
+        }
+
+        if (!Files.isWritable(outputFile)) {
+            errors.add(
+                    "El archivo XML existente no se puede reemplazar: "
+                            + outputFile
             );
         }
     }

@@ -136,6 +136,9 @@ public final class ActivityLogManager {
 
     /**
      * Shows or hides the activity log panel.
+     *
+     * <p>When the panel is shown, the main content and activity list are moved
+     * to their latest visible positions after JavaFX recalculates the layout.</p>
      */
     public void toggleVisibility() {
         boolean showPanel = !activityLogPanel.isVisible();
@@ -149,10 +152,9 @@ public final class ActivityLogManager {
         );
 
         if (showPanel) {
-            Platform.runLater(() -> {
-                contentScrollPane.setVvalue(1.0);
-                scrollToLastEntry();
-            });
+            Platform.runLater(
+                    this::scrollToVisibleActivityPanel
+            );
         }
     }
 
@@ -286,6 +288,26 @@ public final class ActivityLogManager {
                 entry.level().getDisplayName(),
                 entry.message()
         );
+    }
+
+    private void scrollToVisibleActivityPanel() {
+        activityLogPanel.applyCss();
+        activityLogPanel.layout();
+
+        contentScrollPane.applyCss();
+        contentScrollPane.layout();
+        contentScrollPane.setVvalue(
+                contentScrollPane.getVmax()
+        );
+
+        scrollToLastEntry();
+
+        Platform.runLater(() -> {
+            contentScrollPane.setVvalue(
+                    contentScrollPane.getVmax()
+            );
+            scrollToLastEntry();
+        });
     }
 
     private void scrollToLastEntry() {

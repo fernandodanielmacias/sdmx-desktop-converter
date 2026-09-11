@@ -14,6 +14,8 @@ import io.github.ordonovus.sdmxconverter.infrastructure.sdmx.DsdMetadataReader;
 import io.github.ordonovus.sdmxconverter.infrastructure.xml.SdmxXmlValidator;
 import io.github.ordonovus.sdmxconverter.presentation.cell.ConversionStatusTableCell;
 import io.github.ordonovus.sdmxconverter.presentation.conversion.ConversionWorkflowManager;
+import io.github.ordonovus.sdmxconverter.presentation.conversion.ExistingOutputCoordinator;
+import io.github.ordonovus.sdmxconverter.presentation.dialog.ExistingOutputDialog;
 import io.github.ordonovus.sdmxconverter.presentation.dialog.SettingsDialog;
 import io.github.ordonovus.sdmxconverter.presentation.dialog.FileDialogService;
 import io.github.ordonovus.sdmxconverter.presentation.factory.ConversionQueueFactory;
@@ -23,6 +25,7 @@ import io.github.ordonovus.sdmxconverter.presentation.log.ConversionDiagnosticMa
 import io.github.ordonovus.sdmxconverter.presentation.model.ActivityLogEntry;
 import io.github.ordonovus.sdmxconverter.presentation.model.ActivityLogLevel;
 import io.github.ordonovus.sdmxconverter.presentation.model.ConversionFileRow;
+import io.github.ordonovus.sdmxconverter.presentation.model.ConversionQueueItem;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
@@ -35,10 +38,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Coordinates the main conversion screen and delegates specialized behavior
@@ -91,6 +91,8 @@ public final class MainController {
     private ConversionWorkflowManager conversionWorkflowManager;
 
     private ActivityLogManager activityLogManager;
+
+    private ExistingOutputCoordinator existingOutputCoordinator;
 
     private Path selectedDsdFile;
     private DsdMetadata selectedDsdMetadata;
@@ -212,6 +214,12 @@ public final class MainController {
                 toggleActivityLogButton,
                 contentScrollPane
         );
+
+        existingOutputCoordinator =
+                new ExistingOutputCoordinator(
+                        new ExistingOutputDialog(),
+                        activityLogManager
+                );
 
         conversionWorkflowManager =
                 new ConversionWorkflowManager(
@@ -608,18 +616,34 @@ public final class MainController {
                     outputDirectoryField.getText()
             ).toAbsolutePath().normalize();
 
-            var queueItems = conversionQueueFactory.create(
-                    List.copyOf(filesTable.getItems()),
-                    outputDirectory,
-                    selectedDsdFile,
-                    selectedHeaderFile,
-                    selectedDsdMetadata,
-                    conversionParameters
-            );
+            List<ConversionQueueItem> initialQueueItems =
+                    conversionQueueFactory.create(
+                            List.copyOf(filesTable.getItems()),
+                            outputDirectory,
+                            selectedDsdFile,
+                            selectedHeaderFile,
+                            selectedDsdMetadata,
+                            conversionParameters
+                    );
 
-            filesTable.getItems().forEach(
-                    row -> row.setStatus("Pendiente")
-            );
+            var preparedQueue =
+                    existingOutputCoordinator.prepare(
+                            getWindow(),
+                            initialQueueItems
+                    );
+
+            if (preparedQueue.isEmpty()) {
+                filesTable.refresh();
+                return;
+            }
+
+            List<ConversionQueueItem> queueItems =
+                    preparedQueue.orElseThrow();
+
+            filesTable.getItems().forEach(row -> {
+                row.setStatus("Pendiente");
+                row.clearConversionCounts();
+            });
 
             conversionWorkflowManager.start(
                     conversionService,

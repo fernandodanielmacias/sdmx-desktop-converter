@@ -10,11 +10,12 @@ import java.util.Objects;
  * conversion.
  *
  * @param inputFile Excel input file
- * @param outputFile destination XML file
+ * @param outputFile final destination XML file
  * @param dsdFile SDMX structure file
  * @param headerFile SDMX header properties file
  * @param dsdMetadata metadata identifying the selected DSD
  * @param parameters general Converter execution parameters
+ * @param existingOutputPolicy policy applied when the destination XML exists
  */
 public record SdmxConversionRequest(
         Path inputFile,
@@ -22,11 +23,12 @@ public record SdmxConversionRequest(
         Path dsdFile,
         Path headerFile,
         DsdMetadata dsdMetadata,
-        SdmxConversionParameters parameters
+        SdmxConversionParameters parameters,
+        ExistingOutputPolicy existingOutputPolicy
 ) {
 
     /**
-     * Validates and normalizes every path in the request.
+     * Validates and normalizes every value in the request.
      */
     public SdmxConversionRequest {
         inputFile = normalizePath(
@@ -49,14 +51,71 @@ public record SdmxConversionRequest(
                 "headerFile"
         );
 
-        dsdMetadata = Objects.requireNonNull(
+        Objects.requireNonNull(
                 dsdMetadata,
                 "dsdMetadata"
         );
 
-        parameters = Objects.requireNonNull(
+        Objects.requireNonNull(
                 parameters,
                 "parameters"
+        );
+
+        Objects.requireNonNull(
+                existingOutputPolicy,
+                "existingOutputPolicy"
+        );
+    }
+
+    /**
+     * Creates a request that requires a new destination XML file.
+     *
+     * <p>This constructor preserves compatibility for callers that do not
+     * explicitly select an existing-output policy.</p>
+     *
+     * @param inputFile Excel input file
+     * @param outputFile final destination XML file
+     * @param dsdFile SDMX structure file
+     * @param headerFile SDMX header properties file
+     * @param dsdMetadata metadata identifying the selected DSD
+     * @param parameters general Converter execution parameters
+     */
+    public SdmxConversionRequest(
+            Path inputFile,
+            Path outputFile,
+            Path dsdFile,
+            Path headerFile,
+            DsdMetadata dsdMetadata,
+            SdmxConversionParameters parameters
+    ) {
+        this(
+                inputFile,
+                outputFile,
+                dsdFile,
+                headerFile,
+                dsdMetadata,
+                parameters,
+                ExistingOutputPolicy.REQUIRE_NEW
+        );
+    }
+
+    /**
+     * Creates a copy of this request using a different existing-output policy.
+     *
+     * @param policy existing-output policy assigned to the copied request
+     * @return copied conversion request
+     */
+    public SdmxConversionRequest withExistingOutputPolicy(
+            ExistingOutputPolicy policy
+    ) {
+        return new SdmxConversionRequest(
+                inputFile,
+                outputFile,
+                dsdFile,
+                headerFile,
+                dsdMetadata,
+                parameters,
+                Objects.requireNonNull(policy, "policy")
         );
     }
 

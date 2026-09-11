@@ -321,9 +321,9 @@
                     </HBox>
 
                     <ListView fx:id="activityLogList"
-                              prefHeight="165"
-                              minHeight="120"
-                              maxHeight="200"
+                              prefHeight="240"
+                              minHeight="160"
+                              maxHeight="280"
                               focusTraversable="false"
                               styleClass="activity-log-list"/>
                 </VBox>
