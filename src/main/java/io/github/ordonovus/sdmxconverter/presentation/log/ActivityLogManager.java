@@ -143,19 +143,27 @@ public final class ActivityLogManager {
     public void toggleVisibility() {
         boolean showPanel = !activityLogPanel.isVisible();
 
-        activityLogPanel.setVisible(showPanel);
-
-        toggleActivityLogButton.setText(
-                showPanel
-                        ? "Ocultar actividad"
-                        : "Mostrar actividad"
-        );
+        setActivityLogVisible(showPanel);
 
         if (showPanel) {
             Platform.runLater(
                     this::scrollToVisibleActivityPanel
             );
         }
+    }
+
+    /**
+     * Shows the activity log and moves it into the visible content area.
+     *
+     * <p>If the panel is already visible, it remains open and is only moved to
+     * its latest visible position.</p>
+     */
+    public void showActivityLog() {
+        setActivityLogVisible(true);
+
+        Platform.runLater(
+                this::scrollToVisibleActivityPanel
+        );
     }
 
     /**
@@ -215,6 +223,18 @@ public final class ActivityLogManager {
         showStatus(
                 ActivityLogLevel.SUCCESS,
                 "El registro de actividad se copió al portapapeles."
+        );
+    }
+
+    private void setActivityLogVisible(
+            boolean visible
+    ) {
+        activityLogPanel.setVisible(visible);
+
+        toggleActivityLogButton.setText(
+                visible
+                        ? "Ocultar actividad"
+                        : "Mostrar actividad"
         );
     }
 

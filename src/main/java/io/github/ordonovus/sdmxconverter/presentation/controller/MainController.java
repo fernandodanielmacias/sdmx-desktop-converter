@@ -13,8 +13,10 @@ import io.github.ordonovus.sdmxconverter.infrastructure.desktop.DesktopDirectory
 import io.github.ordonovus.sdmxconverter.infrastructure.sdmx.DsdMetadataReader;
 import io.github.ordonovus.sdmxconverter.infrastructure.xml.SdmxXmlValidator;
 import io.github.ordonovus.sdmxconverter.presentation.cell.ConversionStatusTableCell;
+import io.github.ordonovus.sdmxconverter.presentation.conversion.ConversionBatchDiagnostic;
 import io.github.ordonovus.sdmxconverter.presentation.conversion.ConversionWorkflowManager;
 import io.github.ordonovus.sdmxconverter.presentation.conversion.ExistingOutputCoordinator;
+import io.github.ordonovus.sdmxconverter.presentation.dialog.ConversionSummaryDialog;
 import io.github.ordonovus.sdmxconverter.presentation.dialog.ExistingOutputDialog;
 import io.github.ordonovus.sdmxconverter.presentation.dialog.SettingsDialog;
 import io.github.ordonovus.sdmxconverter.presentation.dialog.FileDialogService;
@@ -66,6 +68,9 @@ public final class MainController {
     private final SettingsDialog settingsDialog =
             new SettingsDialog();
 
+    private final ConversionSummaryDialog conversionSummaryDialog =
+            new ConversionSummaryDialog();
+
     private final ConversionQueueFactory conversionQueueFactory =
             new ConversionQueueFactory();
 
@@ -93,6 +98,8 @@ public final class MainController {
     private ActivityLogManager activityLogManager;
 
     private ExistingOutputCoordinator existingOutputCoordinator;
+
+    private ConversionBatchDiagnostic latestConversionDiagnostic;
 
     private Path selectedDsdFile;
     private DsdMetadata selectedDsdMetadata;
@@ -157,6 +164,9 @@ public final class MainController {
 
     @FXML
     private ListView<ActivityLogEntry> activityLogList;
+
+    @FXML
+    private Button showConversionSummaryButton;
 
     @FXML
     private Button toggleActivityLogButton;
@@ -237,7 +247,8 @@ public final class MainController {
                                 chooseOutputDirectoryButton,
                                 chooseDsdFileButton,
                                 chooseHeaderFileButton,
-                                resetFormButton
+                                resetFormButton,
+                                showConversionSummaryButton
                         )
                 );
 
@@ -412,6 +423,9 @@ public final class MainController {
 
     /**
      * Removes every currently selected row from the conversion queue.
+     *
+     * <p>If the operation leaves the queue empty, the available conversion
+     * summary is cleared because it no longer represents any displayed row.</p>
      */
     @FXML
     private void onRemoveSelectedFiles() {
@@ -430,20 +444,31 @@ public final class MainController {
         filesTable.getItems().removeAll(selectedRows);
         updateSelectionCount();
 
+        if (filesTable.getItems().isEmpty()) {
+            clearConversionSummary();
+        }
+
+        int removedFileCount = selectedRows.size();
+
         activityLogManager.add(
                 ActivityLogLevel.INFORMATION,
-                "Se eliminaron " + selectedRows.size()
+                removedFileCount == 1
+                        ? "Se eliminó 1 archivo de la lista."
+                        : "Se eliminaron "
+                        + removedFileCount
                         + " archivos de la lista."
         );
     }
 
     /**
-     * Removes all input files from the conversion queue.
+     * Removes all input files from the conversion queue and clears the available
+     * conversion summary.
      */
     @FXML
     private void onClearFiles() {
         filesTable.getItems().clear();
         updateSelectionCount();
+        clearConversionSummary();
 
         activityLogManager.add(
                 ActivityLogLevel.INFORMATION,
@@ -460,6 +485,7 @@ public final class MainController {
         filesTable.getItems().clear();
         outputDirectoryField.clear();
         conversionDiagnosticManager.clear();
+        clearConversionSummary();
         updateSelectionCount();
 
         activityLogManager.reset(
@@ -477,11 +503,31 @@ public final class MainController {
     }
 
     /**
-     * Removes every visual activity entry and stored conversion diagnostic.
+     * Opens the summary of the most recently finished conversion batch.
+     */
+    @FXML
+    private void onShowConversionSummary() {
+        if (latestConversionDiagnostic == null) {
+            activityLogManager.add(
+                    ActivityLogLevel.WARNING,
+                    "No hay un resumen de conversión disponible."
+            );
+            return;
+        }
+
+        showConversionSummary(
+                latestConversionDiagnostic
+        );
+    }
+
+    /**
+     * Removes every visual activity entry, stored diagnostic and conversion
+     * summary.
      */
     @FXML
     private void onClearActivityLog() {
         conversionDiagnosticManager.clear();
+        clearConversionSummary();
         activityLogManager.clear();
     }
 
@@ -589,22 +635,34 @@ public final class MainController {
         if (selectedDsdFile == null
                 || selectedDsdMetadata == null
                 || selectedHeaderFile == null) {
-            activityLogManager.add(ActivityLogLevel.ERROR, "La configuración SDMX está incompleta.");
+            activityLogManager.add(
+                    ActivityLogLevel.ERROR,
+                    "La configuración SDMX está incompleta."
+            );
             return;
         }
 
-        var installationValidation = converterInstallationManager.validateActiveInstallation();
+        var installationValidation =
+                converterInstallationManager
+                        .validateActiveInstallation();
 
         for (String warning : installationValidation.warnings()) {
-            activityLogManager.add(ActivityLogLevel.WARNING, warning);
+            activityLogManager.add(
+                    ActivityLogLevel.WARNING,
+                    warning
+            );
         }
 
         if (!installationValidation.isValid()) {
             for (String error : installationValidation.errors()) {
-                activityLogManager.add(ActivityLogLevel.ERROR, error);
+                activityLogManager.add(
+                        ActivityLogLevel.ERROR,
+                        error
+                );
             }
 
-            activityLogManager.add(ActivityLogLevel.ERROR,
+            activityLogManager.add(
+                    ActivityLogLevel.ERROR,
                     "El Convertidor SDMX no está configurado "
                             + "correctamente."
             );
@@ -640,10 +698,16 @@ public final class MainController {
             List<ConversionQueueItem> queueItems =
                     preparedQueue.orElseThrow();
 
-            filesTable.getItems().forEach(row -> {
-                row.setStatus("Pendiente");
-                row.clearConversionCounts();
+            /*
+             * Reset only the rows that will actually be converted.
+             * Rows skipped by the user must retain their "Omitido" status.
+             */
+            queueItems.forEach(queueItem -> {
+                queueItem.row().setStatus("Pendiente");
+                queueItem.row().clearConversionCounts();
             });
+
+            filesTable.refresh();
 
             conversionWorkflowManager.start(
                     conversionService,
@@ -651,7 +715,7 @@ public final class MainController {
                             .getActiveInstallation(),
                     queueItems,
                     ignoredOutcomes -> filesTable.refresh(),
-                    conversionDiagnosticManager::add
+                    this::handleConversionDiagnostic
             );
         } catch (IllegalArgumentException exception) {
             activityLogManager.add(
@@ -715,6 +779,31 @@ public final class MainController {
         filesTable.getSelectionModel().setSelectionMode(
                 SelectionMode.MULTIPLE
         );
+    }
+
+    private void handleConversionDiagnostic(
+            ConversionBatchDiagnostic diagnostic
+    ) {
+        conversionDiagnosticManager.add(diagnostic);
+
+        latestConversionDiagnostic = diagnostic;
+        showConversionSummaryButton.setDisable(false);
+
+        showConversionSummary(diagnostic);
+    }
+
+    private void showConversionSummary(
+            ConversionBatchDiagnostic diagnostic
+    ) {
+        boolean showActivity =
+                conversionSummaryDialog.show(
+                        getWindow(),
+                        diagnostic
+                );
+
+        if (showActivity) {
+            activityLogManager.showActivityLog();
+        }
     }
 
     private void handleOutputFileNameEdit(
@@ -916,4 +1005,10 @@ public final class MainController {
                         : size + " archivos seleccionados"
         );
     }
+
+    private void clearConversionSummary() {
+        latestConversionDiagnostic = null;
+        showConversionSummaryButton.setDisable(true);
+    }
+
 }

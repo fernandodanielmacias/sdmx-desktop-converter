@@ -202,6 +202,20 @@
     -fx-background-color: #6d91a5;
 }
 
+.activity-log-list .scroll-bar .increment-button,
+.activity-log-list .scroll-bar .decrement-button {
+    -fx-background-color: #173246;
+}
+
+.activity-log-list .scroll-bar .increment-arrow,
+.activity-log-list .scroll-bar .decrement-arrow {
+    -fx-background-color: #8ba6b8;
+}
+
+.activity-log-list .corner {
+    -fx-background-color: #102536;
+}
+
 .activity-log-row {
     -fx-padding: 3px 2px;
 }
@@ -1041,4 +1055,194 @@
     -fx-border-color: #527c99;
     -fx-border-width: 2px;
     -fx-border-insets: -1px;
+}
+
+/* Conversion summary dialog */
+
+.conversion-summary-dialog {
+    -fx-background-color: #f4f7fb;
+}
+
+.conversion-summary-dialog > .content {
+    -fx-background-color: #f4f7fb;
+    -fx-padding: 18px 22px 20px 22px;
+}
+
+.conversion-summary-dialog > .button-bar {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #d6e1ea transparent transparent transparent;
+    -fx-border-width: 1px 0 0 0;
+    -fx-padding: 14px 20px;
+}
+
+.conversion-summary-dialog > .button-bar > .container {
+    -fx-background-color: #ffffff;
+}
+
+.conversion-summary-content {
+    -fx-background-color: transparent;
+}
+
+.conversion-summary-header {
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px;
+    -fx-padding: 15px 17px;
+}
+
+.conversion-summary-header.conversion-summary-success {
+    -fx-background-color: #eaf7f1;
+    -fx-border-color: #9fd5c0;
+}
+
+.conversion-summary-header.conversion-summary-warning {
+    -fx-background-color: #fff7e3;
+    -fx-border-color: #edcf83;
+}
+
+.conversion-summary-header.conversion-summary-error {
+    -fx-background-color: #fdeced;
+    -fx-border-color: #e9b8bc;
+}
+
+.conversion-summary-icon {
+    -fx-alignment: center;
+    -fx-min-width: 40px;
+    -fx-pref-width: 40px;
+    -fx-max-width: 40px;
+    -fx-min-height: 40px;
+    -fx-pref-height: 40px;
+    -fx-max-height: 40px;
+    -fx-background-radius: 20px;
+    -fx-text-fill: #ffffff;
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+}
+
+.conversion-summary-icon.conversion-summary-success {
+    -fx-background-color: #25866f;
+}
+
+.conversion-summary-icon.conversion-summary-warning {
+    -fx-background-color: #e4a72c;
+}
+
+.conversion-summary-icon.conversion-summary-error {
+    -fx-background-color: #c9474f;
+}
+
+.conversion-summary-title {
+    -fx-text-fill: #17324d;
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-font-size: 18px;
+}
+
+.conversion-summary-description {
+    -fx-text-fill: #526b7e;
+    -fx-font-size: 13px;
+}
+
+.conversion-summary-metrics {
+    -fx-alignment: center;
+}
+
+.conversion-summary-metric {
+    -fx-min-width: 180px;
+    -fx-padding: 12px 16px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-border-width: 1px;
+}
+
+.conversion-summary-metric-success {
+    -fx-background-color: #ecf9f2;
+    -fx-border-color: #afe0c5;
+}
+
+.conversion-summary-metric-error {
+    -fx-background-color: #fdf0f1;
+    -fx-border-color: #edc0c3;
+}
+
+.conversion-summary-metric-pending {
+    -fx-background-color: #f1f4f7;
+    -fx-border-color: #ced8e1;
+}
+
+.conversion-summary-metric-information {
+    -fx-background-color: #edf6fa;
+    -fx-border-color: #b7d7e5;
+}
+
+.conversion-summary-metric-value {
+    -fx-text-fill: #17324d;
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-font-size: 20px;
+}
+
+.conversion-summary-metric-label {
+    -fx-text-fill: #64788a;
+    -fx-font-size: 12px;
+}
+
+.conversion-summary-issues-title {
+    -fx-text-fill: #7d2027;
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-font-size: 14px;
+}
+
+.conversion-summary-issues {
+    -fx-background-color: #fff8f8;
+    -fx-border-color: #edc5c8;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 11px 13px;
+    -fx-text-fill: #7d3036;
+    -fx-font-family: "Consolas";
+    -fx-font-size: 12px;
+}
+
+.conversion-summary-activity-button {
+    -fx-background-color: #cfe7f2;
+    -fx-text-fill: #0f4867;
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-padding: 10px 18px;
+    -fx-background-radius: 7px;
+    -fx-border-color: #79aec5;
+    -fx-border-radius: 7px;
+}
+
+.conversion-summary-activity-button:hover {
+    -fx-background-color: #b9dbe9;
+    -fx-border-color: #4f96b4;
+}
+
+.conversion-summary-activity-button:pressed {
+    -fx-background-color: #a5cfdf;
+}
+
+.conversion-summary-close-button {
+    -fx-background-color: #25866f;
+    -fx-text-fill: #ffffff;
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-padding: 10px 22px;
+    -fx-background-radius: 7px;
+    -fx-border-radius: 7px;
+}
+
+.conversion-summary-close-button:hover {
+    -fx-background-color: #1e725f;
+}
+
+.conversion-summary-close-button:pressed {
+    -fx-background-color: #185e4f;
+}
+
+.conversion-summary-close-button:default,
+.conversion-summary-close-button:focused {
+    -fx-background-color: #25866f;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #85d2bf;
+    -fx-border-width: 2px;
+    -fx-border-insets: -2px;
 }

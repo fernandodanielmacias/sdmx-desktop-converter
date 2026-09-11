@@ -386,6 +386,12 @@
 
                 <Region HBox.hgrow="ALWAYS"/>
 
+                <Button fx:id="showConversionSummaryButton"
+                        text="Ver resumen"
+                        onAction="#onShowConversionSummary"
+                        disable="true"
+                        styleClass="activity-toggle-button"/>
+
                 <Button fx:id="toggleActivityLogButton"
                         text="Mostrar actividad"
                         onAction="#onToggleActivityLog"
