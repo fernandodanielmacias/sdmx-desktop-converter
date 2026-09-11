@@ -57,9 +57,138 @@
                 <version>0.0.8</version>
                 <configuration>
                     <executable>${java.home}/bin/java</executable>
+
                     <mainClass>
                         io.github.ordonovus.sdmxconverter/io.github.ordonovus.sdmxconverter.SdmxDesktopApplication
                     </mainClass>
+
+                    <stripDebug>true</stripDebug>
+                    <noHeaderFiles>true</noHeaderFiles>
+                    <noManPages>true</noManPages>
+
+                    <launcher>ConvertidorSDMX</launcher>
+                    <jlinkImageName>sdmx-converter-runtime</jlinkImageName>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.11.0</version>
+                <executions>
+                    <execution>
+                        <id>prepare-jpackage-modules</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <includeScope>runtime</includeScope>
+                            <outputDirectory>
+                                ${project.build.directory}/jpackage-modules
+                            </outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.4.0</version>
+                <executions>
+                    <execution>
+                        <id>prepare-packaged-converter</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>
+                                ${project.build.directory}/jpackage-content/converter/11.8.1/ConverterCLIApp
+                            </outputDirectory>
+
+                            <resources>
+                                <resource>
+                                    <directory>
+                                        ${project.basedir}/local/converter/11.8.1/app/ConverterCLIApp
+                                    </directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>prepare-packaged-converter-runtime</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>
+                                ${project.build.directory}/jpackage-content/converter-runtime/java-11
+                            </outputDirectory>
+
+                            <resources>
+                                <resource>
+                                    <directory>
+                                        ${project.basedir}/local/runtime/converter-java-11
+                                    </directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.panteleyev</groupId>
+                <artifactId>jpackage-maven-plugin</artifactId>
+                <version>1.8.0</version>
+                <configuration>
+                    <name>Convertidor SDMX</name>
+                    <appVersion>1.0.0</appVersion>
+                    <vendor>Ordo Novus</vendor>
+
+                    <description>Aplicación de escritorio para convertir archivos Excel a SDMX-XML.</description>
+
+                    <type>APP_IMAGE</type>
+
+                    <modulePaths>
+                        <modulePath>
+                            ${project.build.directory}/${project.build.finalName}.jar
+                        </modulePath>
+
+                        <modulePath>
+                            ${project.build.directory}/jpackage-modules
+                        </modulePath>
+                    </modulePaths>
+
+                    <appContentPaths>
+                        <path>
+                            ${project.build.directory}/jpackage-content/converter
+                        </path>
+
+                        <path>
+                            ${project.build.directory}/jpackage-content/converter-runtime
+                        </path>
+                    </appContentPaths>
+
+                    <module>
+                        io.github.ordonovus.sdmxconverter/io.github.ordonovus.sdmxconverter.SdmxDesktopApplication
+                    </module>
+
+                    <destination>
+                        ${project.build.directory}/distribution
+                    </destination>
+
+                    <javaOptions>
+                        <option>-Dfile.encoding=UTF-8</option>
+                    </javaOptions>
+
+                    <removeDestination>true</removeDestination>
                 </configuration>
             </plugin>
 
