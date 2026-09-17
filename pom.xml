@@ -6,7 +6,7 @@
 
     <groupId>io.github.ordonovus</groupId>
     <artifactId>sdmx-desktop-converter</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <name>SDMX Desktop Converter</name>
     <description>
@@ -17,7 +17,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>21</maven.compiler.release>
         <javafx.version>21.0.12</javafx.version>
-        <application.version>1.0.0</application.version>
+        <application.version>1.0.1</application.version>
     </properties>
 
     <dependencies>
@@ -116,6 +116,38 @@
                                     </directory>
                                     <filtering>false</filtering>
                                 </resource>
+
+                                <resource>
+                                    <directory>
+                                        ${project.basedir}/local/converter/11.8.1
+                                    </directory>
+                                    <includes>
+                                        <include>license.txt</include>
+                                    </includes>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>prepare-packaged-converter-source</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>
+                                ${project.build.directory}/jpackage-content/converter/11.8.1/src
+                            </outputDirectory>
+
+                            <resources>
+                                <resource>
+                                    <directory>
+                                        ${project.basedir}/local/converter/11.8.1/src
+                                    </directory>
+                                    <filtering>false</filtering>
+                                </resource>
                             </resources>
                         </configuration>
                     </execution>
@@ -141,6 +173,29 @@
                             </resources>
                         </configuration>
                     </execution>
+
+                    <execution>
+                        <id>prepare-packaged-legal-notices</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>
+                                ${project.build.directory}/jpackage-content/licenses
+                            </outputDirectory>
+
+                            <resources>
+                                <resource>
+                                    <directory>
+                                        ${project.basedir}/src/main/legal
+                                    </directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+
                 </executions>
             </plugin>
 
@@ -178,6 +233,10 @@
 
                         <path>
                             ${project.build.directory}/jpackage-content/converter-runtime
+                        </path>
+
+                        <path>
+                            ${project.build.directory}/jpackage-content/licenses
                         </path>
                     </appContentPaths>
 

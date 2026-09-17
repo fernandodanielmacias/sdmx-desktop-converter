@@ -9,7 +9,7 @@ Eurostat SDMX Converter CLI 11.8.1.
 - JavaFX 21
 - Maven 3.9 or later
 - Eurostat SDMX Converter CLI 11.8.1
-- Private Java 11 runtime for the converter
+- Eclipse Temurin Java 11 runtime for the converter
 - Inno Setup 7 for Windows installer generation
 
 ## Development requirements
@@ -26,9 +26,15 @@ The project has been tested with Apache Maven 3.9.16.
 
 The desktop application is compiled and executed with Java 21.
 
-Eurostat SDMX Converter 11.8.1 runs with its own private Java 11 runtime.
-This runtime does not modify `JAVA_HOME` and does not need to be installed
-or configured by the end user.
+Eurostat SDMX Converter 11.8.1 runs with its own private Eclipse Temurin
+Java 11 runtime. This runtime does not modify `JAVA_HOME` and does not need
+to be installed or configured by the end user.
+
+The packaged Java 11 runtime version is:
+
+```text
+Eclipse Temurin 11.0.32.1+1
+```
 
 ## Local converter files
 
@@ -36,6 +42,18 @@ The development environment expects the converter installation at:
 
 ```text
 local/converter/11.8.1/app/ConverterCLIApp
+```
+
+The corresponding Converter CLI source archive is expected at:
+
+```text
+local/converter/11.8.1/src/converter-cli-11.8.1-sources.jar
+```
+
+The original SDMX Converter license notice is expected at:
+
+```text
+local/converter/11.8.1/license.txt
 ```
 
 The private Java 11 runtime is expected at:
@@ -96,7 +114,7 @@ mvn clean verify -Pwindows-installer
 The generated installer is located at:
 
 ```text
-target\installer\Convertidor-SDMX-1.0.0.exe
+target\installer\Convertidor-SDMX-1.0.1.exe
 ```
 
 The intermediate application image is located at:
@@ -109,7 +127,9 @@ The installer includes:
 
 - The Java 21 application runtime.
 - Eurostat SDMX Converter CLI 11.8.1.
-- The private Java 11 runtime required by the converter.
+- The Converter CLI 11.8.1 source archive.
+- The private Eclipse Temurin Java 11 runtime required by the converter.
+- Applicable license and third-party notice files.
 - Start menu and optional desktop shortcuts.
 - Spanish installation and uninstallation interfaces.
 
@@ -150,8 +170,32 @@ depend on registry or Internet availability.
 
 ## Third-party components
 
-The application integrates Eurostat SDMX Converter CLI. Its distribution and
-use must comply with the licenses and notices supplied with the converter.
+### Eurostat SDMX Converter
 
-Inno Setup is used only during the installer build process and is not included
-in the installed application.
+SDMX Converter is copyright 2009 by the European Community, represented by
+Eurostat, and is distributed under the European Union Public Licence 1.1.
+
+The packaged application preserves:
+
+```text
+converter/11.8.1/ConverterCLIApp/license.txt
+converter/11.8.1/src/converter-cli-11.8.1-sources.jar
+licenses/EUPL-1.1.txt
+```
+
+The original license notice identifies the third-party libraries used by the
+converter and their corresponding licenses.
+
+### Eclipse Temurin
+
+The packaged Java 11 runtime is Eclipse Temurin 11.0.32.1+1, provided by the
+Eclipse Adoptium project.
+
+The runtime is distributed with its original `NOTICE` file and the license,
+additional license information and assembly exception files for its included
+modules.
+
+### Inno Setup
+
+Inno Setup is used only during the Windows installer build process. It is not
+included in the installed application.
