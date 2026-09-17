@@ -75,7 +75,9 @@ user `PATH` environment variable:
 C:\Program Files\Inno Setup 7
 ```
 
-Verify the compiler installation:
+Restart IntelliJ IDEA after modifying the environment variable.
+
+Verify that the Inno Setup compiler is available:
 
 ```cmd
 where ISCC.exe
@@ -119,14 +121,32 @@ environment variables.
 The application reads the identity of the selected SDMX Data Structure
 Definition, including its agency, identifier and version.
 
-The current Excel template has been validated with:
+The current Excel template has been successfully validated with:
 
 ```text
 ESTAT:NA_MAIN(1.17.0)
+ESTAT:NA_MAIN(1.18.0)
 ```
 
-Other DSD versions may require additional SDMX structures, such as concept
-schemes and code lists, as well as changes to the Excel input structure.
+A DSD downloaded without its referenced structures may fail during conversion
+because the converter cannot resolve its concept schemes or code lists.
+
+When downloading a DSD from the SDMX Global Registry for local use, request
+its child references:
+
+```text
+https://registry.sdmx.org/ws/public/sdmxapi/rest/datastructure/{agency}/{id}/{version}?references=children
+```
+
+For example:
+
+```text
+https://registry.sdmx.org/ws/public/sdmxapi/rest/datastructure/ESTAT/NA_MAIN/1.18.0?references=children
+```
+
+This response includes the DSD and the concept schemes and code lists required
+by the converter. The selected XML remains local, so conversion does not
+depend on registry or Internet availability.
 
 ## Third-party components
 
