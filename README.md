@@ -114,7 +114,7 @@ mvn clean verify -Pwindows-installer
 The generated installer is located at:
 
 ```text
-target\installer\Convertidor-SDMX-1.0.1.exe
+target\installer\Convertidor-SDMX-1.0.2.exe
 ```
 
 The intermediate application image is located at:
@@ -168,6 +168,22 @@ This response includes the DSD and the concept schemes and code lists required
 by the converter. The selected XML remains local, so conversion does not
 depend on registry or Internet availability.
 
+## License
+
+SDMX Desktop Converter source code is copyright 2026 Ordo Novus and is
+licensed under the Apache License 2.0.
+
+See the following files for details:
+
+```text
+LICENSE
+NOTICE
+```
+
+The Apache License 2.0 applies only to the original SDMX Desktop Converter
+source code. Third-party components retain their respective licenses and are
+not relicensed under Apache License 2.0.
+
 ## Third-party components
 
 ### Eurostat SDMX Converter
@@ -194,6 +210,12 @@ Eclipse Adoptium project.
 The runtime is distributed with its original `NOTICE` file and the license,
 additional license information and assembly exception files for its included
 modules.
+
+### OpenJFX
+
+The application uses OpenJFX 21.0.12. Its applicable notices and legal
+information are preserved in the packaged application runtime and
+dependencies.
 
 ### Inno Setup
 

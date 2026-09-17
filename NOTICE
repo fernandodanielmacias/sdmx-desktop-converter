@@ -1,0 +1,24 @@
+SDMX Desktop Converter
+Copyright 2026 Ordo Novus
+
+This product includes Eurostat SDMX Converter CLI 11.8.1.
+
+SDMX Converter is Copyright 2009 by the European Community,
+represented by Eurostat, and is distributed under the European Union
+Public Licence version 1.1.
+
+The original SDMX Converter notice, the complete EUPL 1.1 text and the
+corresponding Converter CLI source archive are included in the packaged
+application.
+
+This product includes Eclipse Temurin 11.0.32.1+1, provided by the
+Eclipse Adoptium project. Its original notices and module-specific legal
+files are preserved in the packaged runtime.
+
+This product includes OpenJFX 21.0.12. Its applicable notices and legal
+information are preserved in the packaged application runtime and
+dependencies.
+
+Third-party components retain their respective copyrights and licenses.
+No third-party component is relicensed under the Apache License 2.0
+used by SDMX Desktop Converter.
