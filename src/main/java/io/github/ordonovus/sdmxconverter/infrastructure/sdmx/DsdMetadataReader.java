@@ -4,9 +4,12 @@ import io.github.ordonovus.sdmxconverter.domain.model.DsdMetadata;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
@@ -35,8 +38,7 @@ public class DsdMetadataReader {
         validateFile(dsdFile);
 
         try {
-            Document document = createDocumentBuilderFactory()
-                    .newDocumentBuilder()
+            Document document = createDocumentBuilder()
                     .parse(dsdFile.toFile());
 
             NodeList dataStructures = document.getElementsByTagNameNS(
@@ -71,6 +73,26 @@ public class DsdMetadataReader {
                     exception
             );
         }
+    }
+
+    /**
+     * Creates a securely configured document builder that reports parsing
+     * failures through exceptions without writing diagnostics to the console.
+     *
+     * @return configured document builder
+     * @throws ParserConfigurationException if secure parser configuration fails
+     */
+    private DocumentBuilder createDocumentBuilder()
+            throws ParserConfigurationException {
+        DocumentBuilder documentBuilder =
+                createDocumentBuilderFactory()
+                        .newDocumentBuilder();
+
+        documentBuilder.setErrorHandler(
+                new StrictXmlErrorHandler()
+        );
+
+        return documentBuilder;
     }
 
     private DocumentBuilderFactory createDocumentBuilderFactory()
@@ -127,6 +149,34 @@ public class DsdMetadataReader {
             throw new IOException(
                     "The selected DSD file cannot be read."
             );
+        }
+    }
+
+    /**
+     * Propagates every XML parser diagnostic without printing it to the console.
+     */
+    private static final class StrictXmlErrorHandler
+            implements ErrorHandler {
+
+        @Override
+        public void warning(
+                SAXParseException exception
+        ) throws SAXException {
+            throw exception;
+        }
+
+        @Override
+        public void error(
+                SAXParseException exception
+        ) throws SAXException {
+            throw exception;
+        }
+
+        @Override
+        public void fatalError(
+                SAXParseException exception
+        ) throws SAXException {
+            throw exception;
         }
     }
 
