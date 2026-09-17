@@ -6,7 +6,7 @@
 
     <groupId>io.github.ordonovus</groupId>
     <artifactId>sdmx-desktop-converter</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
 
     <name>SDMX Desktop Converter</name>
     <description>
