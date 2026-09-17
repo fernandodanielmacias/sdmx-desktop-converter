@@ -1,245 +1,137 @@
 # SDMX Desktop Converter
 
-Desktop application built with JavaFX to convert Excel files into SDMX-XML
-using the official Eurostat SDMX Converter CLI.
-
-## Current status
-
-The application currently supports:
-
-- Selecting one or multiple Excel files.
-- Editing the generated XML file name.
-- Selecting an output directory.
-- Loading an SDMX Data Structure Definition.
-- Loading an SDMX header properties file.
-- Executing SDMX Converter CLI 11.8.1.
-- Displaying batch and individual conversion progress.
-- Cancelling an active conversion batch.
-- Validating generated XML files.
-- Counting generated series and observations.
-- Safely replacing existing XML files.
-- Opening the output directory.
-- Displaying and exporting activity and diagnostic logs.
-- Displaying a summary of the most recent conversion batch.
-- Generating a self-contained Windows application image.
-- Running automated tests for the conversion workflow.
+JavaFX desktop application for converting Excel files into SDMX-XML using
+Eurostat SDMX Converter CLI 11.8.1.
 
 ## Technology
 
 - Java 21
 - JavaFX 21
-- Apache Maven 3.9
-- JUnit 5
-- SDMX Converter CLI 11.8.1
-- Java 11 private runtime for SDMX Converter
-- Windows packaging with `jpackage`
+- Maven 3.9 or later
+- Eurostat SDMX Converter CLI 11.8.1
+- Private Java 11 runtime for the converter
+- Inno Setup 7 for Windows installer generation
 
 ## Development requirements
 
-- IntelliJ IDEA 2024.3.3 or later
 - JDK 21
 - Apache Maven 3.9 or later
 - Windows 10 or later
 
-JavaFX and the testing dependencies are managed through Maven.
+JavaFX dependencies are managed through Maven.
 
-The project has been tested with:
-
-- Apache Maven 3.9.16
-- Eclipse Temurin JDK 21.0.12
-- JavaFX 21.0.12
-- Windows 11
+The project has been tested with Apache Maven 3.9.16.
 
 ## Java runtimes
 
-The desktop application is developed, compiled and packaged with JDK 21.
+The desktop application is compiled and executed with Java 21.
 
-SDMX Converter 11.8.1 is executed as an independent process using its own
-private Java 11 runtime. This runtime does not modify `JAVA_HOME` and does
-not need to be installed or configured by the end user.
+Eurostat SDMX Converter 11.8.1 runs with its own private Java 11 runtime.
+This runtime does not modify `JAVA_HOME` and does not need to be installed
+or configured by the end user.
 
-The packaged application therefore contains two separate runtimes:
+## Local converter files
 
-- A reduced Java 21 runtime for the JavaFX application.
-- A private Java 11 runtime used exclusively by SDMX Converter.
-
-## Local packaging dependencies
-
-Before generating the Windows application image, the following local
-directories must exist:
+The development environment expects the converter installation at:
 
 ```text
-local
-├── converter
-│   └── 11.8.1
-│       └── app
-│           └── ConverterCLIApp
-└── runtime
-    └── converter-java-11
+local/converter/11.8.1/app/ConverterCLIApp
 ```
 
-The Converter directory must contain:
+The private Java 11 runtime is expected at:
 
 ```text
-local/converter/11.8.1/app/ConverterCLIApp/converter-cli.jar
+local/runtime/converter-java-11
 ```
 
-The private Java runtime must contain:
+These files are copied into the packaged application when the Windows
+distribution is generated.
 
-```text
-local/runtime/converter-java-11/bin/java.exe
-```
+## Running the application
 
-These local third-party binaries are copied into the generated application
-image during packaging.
-
-## Running the application during development
-
-From the project root, run:
+Compile and run the application from the project directory:
 
 ```cmd
+mvn clean compile
 mvn javafx:run
 ```
 
-The JavaFX Maven configuration uses the following application class:
+## Running tests
 
-```text
-io.github.ordonovus.sdmxconverter.SdmxDesktopApplication
-```
-
-## Running automated tests
-
-Run all automated tests with:
+Execute the automated test suite with:
 
 ```cmd
 mvn clean test
 ```
 
-The test suite covers:
+## Creating the Windows installer
 
-- Conversion request validation.
-- Existing output policies.
-- Safe XML replacement.
-- Temporary output cleanup.
-- Generated XML integrity validation.
-- Secure DSD metadata parsing.
-- SDMX Converter command generation.
+### Requirements
 
-## Generating the Windows application image
+Install Inno Setup 7 and add its installation directory permanently to the
+user `PATH` environment variable:
 
-Generate a complete self-contained Windows application image with:
+```text
+C:\Program Files\Inno Setup 7
+```
+
+Verify the compiler installation:
 
 ```cmd
-mvn clean package jpackage:jpackage
+where ISCC.exe
+ISCC.exe /?
 ```
 
-This command:
+### Build command
 
-1. Compiles the project.
-2. Executes the automated tests.
-3. Creates the modular application JAR.
-4. Collects the JavaFX runtime dependencies.
-5. Creates a reduced Java 21 runtime.
-6. Copies SDMX Converter 11.8.1.
-7. Copies the private Java 11 runtime.
-8. Generates the native Windows executable.
-
-The generated application is located at:
-
-```text
-target/distribution/Convertidor SDMX
-```
-
-The executable is:
-
-```text
-target/distribution/Convertidor SDMX/Convertidor SDMX.exe
-```
-
-The `target` directory contains generated build artifacts and must not be
-committed to the repository.
-
-## Running the packaged application
-
-From Windows Command Prompt:
+Generate and test the application, create the Java application image and
+build the Windows installer with:
 
 ```cmd
-"target\distribution\Convertidor SDMX\Convertidor SDMX.exe"
+mvn clean verify -Pwindows-installer
 ```
 
-From PowerShell:
-
-```powershell
-& ".\target\distribution\Convertidor SDMX\Convertidor SDMX.exe"
-```
-
-The entire `Convertidor SDMX` directory must remain together. The executable
-must not be distributed by itself.
-
-The generated directory contains approximately:
+The generated installer is located at:
 
 ```text
-Convertidor SDMX
-├── Convertidor SDMX.exe
-├── app
-├── runtime
-├── converter
-│   └── 11.8.1
-│       └── ConverterCLIApp
-└── converter-runtime
-    └── java-11
-        └── bin
-            └── java.exe
+target\installer\Convertidor-SDMX-1.0.0.exe
 ```
 
-## Packaged path resolution
-
-The application resolves its packaged resources relative to the location of
-`Convertidor SDMX.exe`.
-
-This means that the paths are not tied to the computer used to build the
-application. If the application is installed or copied to another computer,
-the Converter and its private Java runtime are located relative to the new
-installation directory.
-
-The paths can also be overridden with these Java system properties:
+The intermediate application image is located at:
 
 ```text
-sdmx.converter.directory
-sdmx.converter.java
+target\distribution\Convertidor SDMX
 ```
 
-## Optional modular runtime image
+The installer includes:
 
-A standalone modular runtime image can be generated for development and
-diagnostic purposes with:
+- The Java 21 application runtime.
+- Eurostat SDMX Converter CLI 11.8.1.
+- The private Java 11 runtime required by the converter.
+- Start menu and optional desktop shortcuts.
+- Spanish installation and uninstallation interfaces.
 
-```cmd
-mvn clean javafx:jlink
+End users do not need to install Java, Maven, JavaFX, Inno Setup or configure
+environment variables.
+
+## SDMX structures
+
+The application reads the identity of the selected SDMX Data Structure
+Definition, including its agency, identifier and version.
+
+The current Excel template has been validated with:
+
+```text
+ESTAT:NA_MAIN(1.17.0)
 ```
 
-This image is not the final Windows distribution. The normal distribution
-workflow uses `jpackage`.
-
-## Distribution objective
-
-The final Windows distribution will provide a native installer and include
-all required application files and Java runtimes.
-
-End users will not need to:
-
-- Install Java.
-- Configure `JAVA_HOME`.
-- Configure `PATH`.
-- Install Maven.
-- Execute batch files.
-- Install SDMX Converter separately.
+Other DSD versions may require additional SDMX structures, such as concept
+schemes and code lists, as well as changes to the Excel input structure.
 
 ## Third-party components
 
-The application integrates with Eurostat SDMX Converter CLI 11.8.1 and
-distributes a private Java 11 runtime for executing it.
+The application integrates Eurostat SDMX Converter CLI. Its distribution and
+use must comply with the licenses and notices supplied with the converter.
 
-Before publishing or delivering the final installer, the applicable licenses,
-copyright notices and redistribution terms for all third-party components
-must be reviewed and included in the distribution.
+Inno Setup is used only during the installer build process and is not included
+in the installed application.

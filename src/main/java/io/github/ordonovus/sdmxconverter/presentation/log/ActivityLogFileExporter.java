@@ -19,7 +19,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
@@ -28,6 +30,9 @@ import java.util.stream.Collectors;
 /**
  * Exports the visual activity history and conversion diagnostics to a UTF-8
  * log file.
+ *
+ * <p>Diagnostic timestamps are formatted using the system default time zone
+ * so that exported values match the user's local date and time.</p>
  */
 public final class ActivityLogFileExporter {
 
@@ -36,6 +41,10 @@ public final class ActivityLogFileExporter {
 
     private static final DateTimeFormatter EXPORTED_AT_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    private static final DateTimeFormatter DIAGNOSTIC_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                    .withZone(ZoneId.systemDefault());
 
     /**
      * Exports only the supplied visual activity entries.
@@ -317,12 +326,12 @@ public final class ActivityLogFileExporter {
         appendProperty(
                 content,
                 "Inicio",
-                diagnostic.startedAt().toString()
+                formatDiagnosticTime(diagnostic.startedAt())
         );
         appendProperty(
                 content,
                 "Fin",
-                diagnostic.finishedAt().toString()
+                formatDiagnosticTime(diagnostic.finishedAt())
         );
         appendProperty(
                 content,
@@ -598,12 +607,12 @@ public final class ActivityLogFileExporter {
         appendProperty(
                 content,
                 "Inicio del proceso",
-                executionResult.startedAt()
+                formatDiagnosticTime(executionResult.startedAt())
         );
         appendProperty(
                 content,
                 "Fin del proceso",
-                executionResult.finishedAt()
+                formatDiagnosticTime(executionResult.finishedAt())
         );
         appendProperty(
                 content,
@@ -751,6 +760,12 @@ public final class ActivityLogFileExporter {
         appendLine(
                 content,
                 writer.toString().stripTrailing()
+        );
+    }
+
+    private String formatDiagnosticTime(Instant instant) {
+        return DIAGNOSTIC_TIME_FORMATTER.format(
+                Objects.requireNonNull(instant, "instant")
         );
     }
 
